@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111827">
+<title>Edward Cell 2026 | Sistema de gestión</title>
+<style>
+:root{--bg:#f3f5f8;--ink:#172033;--muted:#64748b;--brand:#111827;--accent:#f4b400;--line:#e2e8f0;--white:#fff;--ok:#16794b;--danger:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink)}button,input,select{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:11px 14px;background:var(--brand);color:white;font-weight:650}button.secondary{background:#e8edf4;color:var(--ink)}button.accent{background:var(--accent);color:#191919}button:disabled{opacity:.5;cursor:not-allowed}
+header{background:var(--brand);color:white;padding:16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-bottom:4px solid var(--accent)}.brand{font-weight:850;font-size:20px}.brand small{display:block;color:#cbd5e1;font-size:12px;font-weight:500}.wrap{max-width:1180px;margin:auto;padding:16px}.panel,.stat{background:white;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 3px 12px #0f172a08}.login{max-width:440px;margin:8vh auto}.hidden{display:none!important}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.stat strong{display:block;font-size:24px;margin-top:8px}.muted{color:var(--muted);font-size:13px}.nav{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.nav button{background:white;color:var(--ink);border:1px solid var(--line)}.nav button.active{background:var(--brand);color:white}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:140px;margin:7px 0}.field input,.field select{width:100%;border:1px solid #cbd5e1;border-radius:9px;padding:11px;background:white;color:var(--ink)}h1{font-size:25px;margin:4px 0 8px}h2{font-size:19px;margin:0 0 12px}.tablewrap{overflow:auto;margin-top:12px}table{width:100%;border-collapse:collapse;min-width:650px}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);font-size:14px}th{background:#f8fafc}.notice{padding:12px;border-radius:10px;background:#fff7db;color:#674d00;font-size:13px;margin:12px 0}.error{color:var(--danger);font-size:13px;white-space:pre-wrap}.success{color:var(--ok);font-size:13px;white-space:pre-wrap}.actions{display:flex;gap:8px;flex-wrap:wrap}.tag{display:inline-block;background:#fff1b8;border-radius:6px;padding:4px 7px;font-size:12px;color:#614900}.empty{padding:20px;text-align:center;color:var(--muted)}footer{text-align:center;padding:22px;color:var(--muted);font-size:12px}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.wrap{padding:11px}.stat{padding:12px}.stat strong{font-size:20px}}@media(max-width:420px){.grid{grid-template-columns:1fr 1fr}.brand{font-size:18px}}
+#printOverlay,#askOverlay,#confirmOverlay{position:fixed;inset:0;background:#0f172acc;z-index:50;overflow:auto;padding:12px}.sheet{background:#fff;color:#111;max-width:760px;margin:0 auto 12px;padding:28px;border-radius:8px}.sheet table{min-width:0}.sheet h1,.sheet h2{margin:0 0 6px}.void{color:#b42318;border:3px solid #b42318;display:inline-block;padding:2px 10px;font-weight:800;margin-top:6px}.tot{margin-left:auto;width:260px;text-align:right;line-height:1.8;margin-top:12px}.ask{background:#fff;max-width:420px;margin:12vh auto;padding:16px;border-radius:14px}.bar{max-width:760px;margin:0 auto 10px;display:flex;gap:8px}
+@media print{body>*:not(#printOverlay){display:none!important}#printOverlay{position:static;background:#fff;padding:0}.bar{display:none}.sheet{max-width:none;padding:0;margin:0}}
+</style>
+</head>
+<body>
+<header><div class="brand">📱 EDWARD CELL <small>Sistema de gestión · 2026</small></div><div class="actions"><span id="userLabel" class="muted" style="color:#e2e8f0"></span><button id="logoutBtn" class="secondary hidden">Cerrar sesión</button></div></header>
+<main class="wrap">
+<section id="configPanel" class="panel">
+<h2>Conexión con el sistema</h2>
+<p class="muted">No se pudo conectar con el sistema. Revisa tu internet y pulsa Reintentar.</p>
+<div class="field" style="display:none"><label for="supabaseUrl">Dirección</label><input id="supabaseUrl" placeholder="https://xxxxxxxx.supabase.co" autocomplete="url"></div>
+<div class="field" style="display:none"><label for="supabaseKey">Clave</label><input id="supabaseKey" placeholder="sb_publishable_... o clave anon" autocomplete="off"></div>
+<div class="actions"><button id="saveConfigBtn">Reintentar</button><button id="clearConfigBtn" class="secondary hidden">Borrar</button></div>
+<p id="configMsg" class="muted"></p>
+</section>
+<section id="loginPanel" class="panel login hidden">
+<h1>Iniciar sesión</h1><p class="muted">Escribe tu correo y contraseña para entrar.</p>
+<form id="loginForm">
+<div class="field"><label for="email">Correo electrónico</label><input id="email" type="email" required autocomplete="username"></div>
+<div class="field"><label for="password">Contraseña</label><input id="password" type="password" required autocomplete="current-password"></div>
+<button type="submit" style="width:100%">Entrar</button><p id="loginMsg" class="error"></p>
+</form>
+</section>
+<section id="appPanel" class="hidden">
+<div class="row" style="justify-content:space-between"><div><h1 id="welcome">Panel principal</h1><p class="muted">Inventario y operación de Edward Cell.</p></div><span id="roleTag" class="tag">Usuario</span></div>
+<div class="grid">
+<div class="stat"><span class="muted">Productos activos</span><strong id="statProducts">—</strong></div>
+<div class="stat"><span class="muted">Clientes registrados</span><strong id="statCustomers">—</strong></div>
+<div class="stat"><span class="muted">Facturas registradas</span><strong id="statSales">—</strong></div>
+<div class="stat"><span class="muted">Productos con poco stock</span><strong id="statLow">—</strong></div>
+</div>
+<nav class="nav">
+<button class="active" data-view="home">Inicio</button><button data-view="products">Productos</button><button data-view="customers">Clientes</button><button data-view="sales">Facturas</button><button data-view="quotes">Cotizaciones</button><button data-view="credits">Créditos y cuotas</button><button data-view="reports" id="navReports" class="hidden">Reportes</button><button data-view="users" id="navUsers" class="hidden">Usuarios</button><button data-view="settings">Configuración</button>
+</nav>
+<div id="view-home" class="panel">
+<h2>Bienvenido</h2><p>Elige una opción del menú para empezar.</p>
+<div class="actions"><button class="accent" data-goto="products">Consultar productos</button><button class="secondary" data-goto="customers">Consultar clientes</button></div>
+</div>
+<div id="view-products" class="panel hidden">
+<h2>Productos</h2><p class="muted">Consulta el catálogo. Dueño y administradores pueden crear y editar productos.</p>
+<div class="row"><div class="field"><label for="productSearch">Buscar por nombre, SKU, marca o modelo</label><input id="productSearch" placeholder="Ej. iPhone 15"></div><button id="refreshProducts" class="secondary">Actualizar</button></div>
+<div class="actions" style="margin-top:10px"><button id="newProductBtn" class="accent hidden" type="button">＋ Nuevo producto</button></div>
+<form id="productForm" class="panel hidden" style="margin-top:12px;background:#f8fafc">
+<h2 id="productFormTitle">Nuevo producto</h2><input type="hidden" id="pfId">
+<div class="row"><div class="field"><label for="pfName">Nombre *</label><input id="pfName" required maxlength="150" placeholder="Ej. Cargador 20W"></div><div class="field"><label for="pfBrand">Marca</label><input id="pfBrand" maxlength="80"></div><div class="field"><label for="pfModel">Modelo</label><input id="pfModel" maxlength="80"></div></div>
+<div class="row"><div class="field"><label for="pfCondition">Condición</label><select id="pfCondition"><option value="">— Sin especificar —</option><option value="new">Nuevo</option><option value="used">Usado</option><option value="refurbished">Reacondicionado</option></select></div><div class="field"><label for="pfRetail">Precio de venta (DOP) *</label><input id="pfRetail" type="number" min="0" step="0.01" required inputmode="decimal"></div><div class="field"><label for="pfWholesale">Precio al por mayor (DOP)</label><input id="pfWholesale" type="number" min="0" step="0.01" inputmode="decimal"></div></div>
+<div class="row"><div class="field"><label for="pfStock">Stock</label><input id="pfStock" type="number" min="0" step="1" value="0" inputmode="numeric"></div><div class="field"><label for="pfLow">Aviso de poco stock</label><input id="pfLow" type="number" min="0" step="1" value="1" inputmode="numeric"></div></div>
+<div class="actions"><button type="submit" class="accent">Guardar producto</button><button type="button" id="pfCancel" class="secondary">Cancelar</button></div><p id="pfMsg" aria-live="polite"></p></form>
+<div id="productsTable" class="tablewrap"><div class="empty">Cargando productos…</div></div>
+</div>
+<div id="view-customers" class="panel hidden">
+<h2>Clientes</h2><div class="row"><div class="field"><label for="customerSearch">Buscar cliente</label><input id="customerSearch" placeholder="Nombre o teléfono"></div><button id="refreshCustomers" class="secondary">Actualizar</button></div>
+<div class="actions" style="margin-top:10px"><button id="newCustomerBtn" class="accent hidden" type="button">＋ Nuevo cliente</button></div>
+<form id="customerForm" class="panel hidden" style="margin-top:12px;background:#f8fafc">
+<h2 id="customerFormTitle">Nuevo cliente</h2><input type="hidden" id="cfId">
+<div class="row"><div class="field"><label for="cfName">Nombre completo *</label><input id="cfName" required maxlength="150" autocomplete="off"></div><div class="field"><label for="cfPhone">Teléfono</label><input id="cfPhone" type="tel" maxlength="30" inputmode="tel" autocomplete="off"></div><div class="field"><label for="cfEmail">Correo</label><input id="cfEmail" type="email" maxlength="120" autocomplete="off"></div></div>
+<div class="actions"><button type="submit" class="accent">Guardar cliente</button><button type="button" id="cfCancel" class="secondary">Cancelar</button></div><p id="cfMsg" aria-live="polite"></p></form>
+<div id="customersTable" class="tablewrap"><div class="empty">Cargando clientes…</div></div>
+</div>
+<div id="view-sales" class="panel hidden"><h2>Facturas</h2>
+<div class="actions"><button id="newSaleBtn" class="accent" type="button">＋ Nueva factura</button></div>
+<form id="saleForm" class="panel hidden" style="margin-top:12px;background:#f8fafc">
+<h2>Nueva factura</h2>
+<div class="row"><div class="field"><label for="sfCustomer">Cliente (opcional)</label><select id="sfCustomer"><option value="">Consumidor final</option></select></div></div>
+<div class="row"><div class="field"><label for="sfProduct">Producto</label><select id="sfProduct"><option value="">Selecciona un producto…</option></select></div><button type="button" id="sfAddBtn" class="accent">Agregar</button></div>
+<p id="sfEmpty" class="error"></p>
+<div class="field"><label for="sfSearch">Filtrar la lista (opcional)</label><input id="sfSearch" placeholder="Escribe parte del nombre, marca o modelo" autocomplete="off"></div>
+<h2 style="margin-top:14px">Productos de la factura</h2>
+<div id="sfCart" class="tablewrap"></div>
+<div class="row"><div class="field"><label for="sfMethod">Forma de pago</label><select id="sfMethod"><option value="cash">Efectivo</option><option value="card">Tarjeta</option><option value="transfer">Transferencia</option></select></div><div class="field"><label for="sfRef">Referencia (opcional)</label><input id="sfRef" maxlength="200" autocomplete="off"></div></div>
+<label style="display:flex;gap:10px;align-items:center;margin:12px 0;font-weight:600"><input type="checkbox" id="sfItbis" style="width:22px;height:22px"> Aplicar ITBIS (18%)</label>
+<div class="field"><label for="sfNotes">Notas (opcional)</label><input id="sfNotes" maxlength="300" autocomplete="off"></div>
+<div id="sfTotals" style="font-size:15px;line-height:1.8;margin:10px 0"></div>
+<div class="actions"><button type="submit" class="accent" id="sfSubmit">Registrar factura</button><button type="button" id="sfCancel" class="secondary">Cancelar</button></div><p id="sfMsg" aria-live="polite"></p></form>
+<div class="notice">Cada factura descuenta el inventario y registra el pago completo. Solo el dueño o un administrador puede anular una factura; los productos vuelven al inventario.</div>
+<div id="salesTable" class="tablewrap"></div></div>
+<div id="view-quotes" class="panel hidden"><h2>Cotizaciones</h2>
+<div class="row"><div class="field"><label for="quoteSearch">Buscar por número o cliente</label><input id="quoteSearch" placeholder="Ej. 3 o María"></div><button id="refreshQuotes" class="secondary" type="button">Actualizar</button></div>
+<div class="actions" style="margin-top:10px"><button id="newQuoteBtn" class="accent" type="button">＋ Nueva cotización</button></div>
+<form id="quoteForm" class="panel hidden" style="margin-top:12px;background:#f8fafc">
+<h2>Nueva cotización</h2>
+<div class="row"><div class="field"><label for="qfCustomer">Cliente (opcional)</label><select id="qfCustomer"><option value="">Sin cliente</option></select></div></div>
+<div class="row"><div class="field"><label for="qfProduct">Producto</label><select id="qfProduct"><option value="">Selecciona un producto…</option></select></div><button type="button" id="qfAddBtn" class="accent">Agregar</button></div>
+<p id="qfEmpty" class="error"></p>
+<div class="field"><label for="qfSearch">Filtrar la lista (opcional)</label><input id="qfSearch" placeholder="Escribe parte del nombre, marca o modelo" autocomplete="off"></div>
+<h2 style="margin-top:14px">Productos de la cotización</h2>
+<div id="qfCart" class="tablewrap"></div>
+<div class="row"><div class="field"><label for="qfDays">Válida por (días)</label><input id="qfDays" type="number" min="1" max="365" step="1" value="15" inputmode="numeric"></div></div>
+<label style="display:flex;gap:10px;align-items:center;margin:12px 0;font-weight:600"><input type="checkbox" id="qfItbis" style="width:22px;height:22px"> Aplicar ITBIS (18%)</label>
+<div class="field"><label for="qfNotes">Notas (opcional)</label><input id="qfNotes" maxlength="300" autocomplete="off"></div>
+<div id="qfTotals" style="font-size:15px;line-height:1.8;margin:10px 0"></div>
+<div class="actions"><button type="submit" class="accent" id="qfSubmit">Guardar cotización</button><button type="button" id="qfCancel" class="secondary">Cancelar</button></div><p id="qfMsg" aria-live="polite"></p></form>
+<div class="notice">Las cotizaciones no descuentan inventario ni reservan productos. Al convertirla en factura se usan los precios actuales; si cambiaron desde la cotización, el sistema avisa y no la convierte.</div>
+<div id="discInbox"></div><div id="quotesMsg" class="muted" aria-live="polite"></div>
+<div id="quotesTable" class="tablewrap"><div class="empty">Pulsa Actualizar para consultar cotizaciones.</div></div>
+<div id="quoteDetail" class="hidden" style="margin-top:18px"></div></div>
+<div id="view-credits" class="panel hidden">
+<h2>Créditos y cuotas</h2><p class="muted">Consulta los créditos, revisa sus cuotas y registra cobros.</p>
+<div class="row"><div class="field"><label for="creditSearch">Buscar por nombre o teléfono del cliente</label><input id="creditSearch" placeholder="Nombre o teléfono"></div><div class="field"><label for="creditStatusFilter">Estado del crédito</label><select id="creditStatusFilter"><option value="active">Activos</option><option value="all">Todos</option><option value="paid">Pagados</option><option value="cancelled">Cancelados</option></select></div><button id="refreshCredits" class="secondary">Actualizar</button></div>
+<div class="actions hidden" id="ccBtnWrap"><button id="newCreditBtn" class="accent" type="button">＋ Nueva venta a crédito</button></div>
+<form id="creditSaleForm" class="panel hidden" style="margin-top:12px;background:#f8fafc">
+<h2>Nueva venta a crédito</h2>
+<div class="row"><div class="field"><label for="ccCustomer">Cliente *</label><select id="ccCustomer" required></select></div></div>
+<div class="row"><div class="field"><label for="ccProduct">Producto</label><select id="ccProduct"><option value="">Selecciona un producto…</option></select></div><button type="button" id="ccAddBtn" class="accent">Agregar</button></div>
+<p id="ccEmpty" class="error"></p>
+<div class="field"><label for="ccSearch">Filtrar la lista (opcional)</label><input id="ccSearch" placeholder="Escribe parte del nombre, marca o modelo" autocomplete="off"></div>
+<h2 style="margin-top:14px">Productos del crédito</h2>
+<div id="ccCart" class="tablewrap"></div>
+<label style="display:flex;gap:10px;align-items:center;margin:12px 0;font-weight:600"><input type="checkbox" id="ccItbis" style="width:22px;height:22px"> Aplicar ITBIS (18%)</label>
+<div class="row"><div class="field"><label for="ccInitial">Inicial (DOP)</label><input id="ccInitial" type="number" min="0" step="0.01" value="0" inputmode="decimal"></div><div class="field"><label for="ccInitialMethod">Método de la inicial</label><select id="ccInitialMethod"><option value="cash">Efectivo</option><option value="card">Tarjeta</option><option value="transfer">Transferencia</option></select></div></div>
+<div class="row"><div class="field"><label for="ccInterest">Interés mensual (%) *</label><input id="ccInterest" type="number" min="0" step="0.01" required inputmode="decimal" placeholder="Ej. 5"></div><div class="field"><label for="ccLate">Recargo por atraso (%) *</label><input id="ccLate" type="number" min="0" step="0.01" required inputmode="decimal" placeholder="Ej. 5"></div></div>
+<div class="row"><div class="field"><label for="ccFreq">Frecuencia *</label><select id="ccFreq" required></select></div><div class="field"><label for="ccCount">Número de cuotas *</label><input id="ccCount" type="number" min="1" step="1" required inputmode="numeric"></div><div class="field"><label for="ccFirst">Primera fecha de pago *</label><input id="ccFirst" type="date" required></div></div>
+<div class="field"><label for="ccNotes">Notas (opcional)</label><input id="ccNotes" maxlength="300" autocomplete="off"></div>
+<div id="ccTotals" style="font-size:15px;line-height:1.8;margin:10px 0"></div>
+<div class="actions"><button type="submit" class="accent" id="ccSubmit">Registrar crédito</button><button type="button" id="ccCancel" class="secondary">Cancelar</button></div><p id="ccMsg" aria-live="polite"></p></form>
+<div id="creditsMsg" class="muted" aria-live="polite"></div><div id="creditsTable" class="tablewrap"><div class="empty">Pulsa Actualizar para consultar créditos.</div></div>
+<div id="creditDetail" class="hidden" style="margin-top:18px"><hr style="border:0;border-top:1px solid var(--line);margin:18px 0"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 id="creditDetailTitle">Cuotas del crédito</h2><div class="actions"><button type="button" id="deleteCreditBtn" class="secondary hidden" style="color:#b42318">Eliminar crédito</button><button type="button" class="secondary close-credit-detail">✕ Cerrar cuotas</button></div></div><div id="creditSummary" class="muted"></div><div id="installmentsTable" class="tablewrap"></div>
+<form id="creditPaymentForm" class="panel hidden" style="margin-top:16px;background:#f8fafc"><h2>Registrar cobro de cuota</h2><input type="hidden" id="payCreditId"><input type="hidden" id="payInstallmentId"><p id="payInstallmentInfo" class="muted"></p><div class="row"><div class="field"><label for="payAmount">Monto a cobrar (DOP)</label><input id="payAmount" type="number" min="0.01" step="0.01" required inputmode="decimal" placeholder="0.00"></div><div class="field"><label for="payMethod">Método de pago</label><select id="payMethod" required><option value="cash">Efectivo</option><option value="card">Tarjeta</option><option value="transfer">Transferencia</option><option value="other">Otro</option></select></div></div><div class="field"><label for="payReference">Referencia (opcional)</label><input id="payReference" maxlength="200" placeholder="N.º de recibo o referencia"></div><div class="actions"><button type="submit" class="accent">Registrar pago</button><button type="button" id="cancelPayment" class="secondary">Cancelar</button></div><p id="paymentMsg" aria-live="polite"></p></form>
+<h2 style="margin-top:18px">Historial de cobros</h2><div id="creditPaymentsTable" class="tablewrap"></div><div class="actions" style="margin-top:12px"><button type="button" class="secondary close-credit-detail">✕ Cerrar cuotas</button></div></div>
+<div class="notice">El formulario solo registra pagos de cuotas existentes y no permite cobrar por encima del saldo de la cuota.</div>
+</div>
+<div id="view-users" class="panel hidden"><h2>Usuarios</h2><p class="muted">Aquí creas los usuarios del sistema y defines si son administradores o empleados.</p>
+<div class="actions"><button id="newUserBtn" class="accent" type="button">＋ Nuevo usuario</button><button id="refreshUsers" class="secondary" type="button">Actualizar</button></div>
+<form id="userForm" class="panel hidden" style="margin-top:12px;background:#f8fafc"><h2>Nuevo usuario</h2>
+<div class="row"><div class="field"><label for="ufName">Nombre *</label><input id="ufName" required maxlength="100" autocomplete="off"></div><div class="field"><label for="ufRole">Rol *</label><select id="ufRole"><option value="employee">Empleado</option><option value="admin">Administrador</option></select></div></div>
+<div class="row"><div class="field"><label for="ufEmail">Correo *</label><input id="ufEmail" type="email" required autocomplete="off"></div><div class="field"><label for="ufPass">Contraseña * (mínimo 8 caracteres)</label><input id="ufPass" type="password" required minlength="8" autocomplete="new-password"></div></div>
+<div class="actions"><button type="submit" class="accent" id="ufSave">Crear usuario</button><button type="button" id="ufCancel" class="secondary">Cancelar</button></div><p id="ufMsg" aria-live="polite"></p></form>
+<p id="usersMsg" class="muted" aria-live="polite"></p><div id="usersTable" class="tablewrap"></div></div>
+<div id="view-settings" class="panel hidden"><h2>Configuración del negocio</h2><p class="muted">Estos datos salen en el encabezado de facturas y cotizaciones. Moneda: DOP.</p><form id="bizForm"><div class="row"><div class="field"><label for="bfName">Nombre del negocio *</label><input id="bfName" required maxlength="150"></div><div class="field"><label for="bfRnc">RNC</label><input id="bfRnc" maxlength="30"></div></div><div class="row"><div class="field"><label for="bfPhone">Teléfono</label><input id="bfPhone" maxlength="30" type="tel"></div><div class="field"><label for="bfAddr">Dirección</label><input id="bfAddr" maxlength="200"></div></div><div class="actions"><button type="submit" class="accent" id="bfSave">Guardar datos</button></div><p id="bfMsg" aria-live="polite"></p></form></div>
+<div id="view-reports" class="panel hidden"><h2>Reportes</h2><div class="row"><div class="field"><label for="rpPeriod">Período</label><select id="rpPeriod"><option value="today">Hoy</option><option value="week">Esta semana</option><option value="month" selected>Este mes</option><option value="30">Últimos 30 días</option><option value="custom">Personalizado</option></select></div><div class="field rpc hidden"><label for="rpFrom">Desde</label><input id="rpFrom" type="date"></div><div class="field rpc hidden"><label for="rpTo">Hasta</label><input id="rpTo" type="date"></div><button id="rpGo" type="button" class="accent">Ver reporte</button></div><p id="rpMsg" class="muted" aria-live="polite"></p><div id="rpOut"></div><div id="rpCredit"></div></div>
+<p id="appMsg" class="muted"></p>
+</section>
+</main>
+<footer>Edward Cell 2026 · Acceso autorizado únicamente</footer>
+<div id="printOverlay" class="hidden"><div class="bar"><button id="prPrint" class="accent" type="button">Imprimir / Guardar PDF</button><button id="prClose" class="secondary" type="button">Cerrar</button></div><div id="printSheet" class="sheet"></div></div>
+<div id="confirmOverlay" class="hidden"><form class="ask" id="confirmForm"><h2 id="confirmTitle">Confirmar</h2><p id="confirmText"></p><div class="actions"><button type="submit" class="accent" id="confirmOk">Aceptar</button><button type="button" id="confirmCancel" class="secondary">Cancelar</button></div></form></div>
+<div id="askOverlay" class="hidden"><form class="ask" id="askForm"><h2 id="askTitle"></h2><div class="field"><label id="askLabel" for="askInput"></label><input id="askInput" autocomplete="off"></div><div class="actions"><button type="submit" class="accent">Aceptar</button><button type="button" id="askCancel" class="secondary">Cancelar</button></div></form></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+ const $ = id => document.getElementById(id);
+ let biz = null, salesCache = [];
+ let sb = null, currentUser = null, profile = null, products = [], customers = [];
+ const storedUrl = 'https://fgzrfcdyvvuolhfqlfwv.supabase.co';
+ const storedKey = 'sb_publishable_zLmEryDKOFcSuq0fI7sL6A_A7cK7dB3';
+ $('supabaseUrl').value = storedUrl; $('supabaseKey').value = storedKey;
+ const ES_ERR=[
+ [/Invalid login credentials.*/i,'Correo o contraseña incorrectos.'],
+ [/Email not confirmed.*/i,'El correo todavía no ha sido confirmado.'],
+ [/(Failed to fetch|NetworkError|Load failed|network request failed).*/i,'No hay conexión con el sistema. Revisa tu internet.'],
+ [/(row-level security|permission denied|not authorized|insufficient privilege).*/i,'No tienes permiso para realizar esta acción.'],
+ [/duplicate key.*/i,'Ya existe un registro con esos datos.'],
+ [/violates foreign key.*/i,'No se puede completar: hay datos relacionados.'],
+ [/violates check constraint.*/i,'Algún dato no es válido.'],
+ [/violates not-null.*/i,'Falta un dato obligatorio.'],
+ [/invalid input syntax.*/i,'Algún dato no tiene un formato válido.'],
+ [/JWT expired.*/i,'Tu sesión expiró. Inicia sesión de nuevo.'],
+ [/(Too many requests|rate limit).*/i,'Demasiados intentos. Espera un momento e intenta de nuevo.'],
+ [/(Could not find the function|schema cache|does not exist).*/i,'Esta función todavía no está disponible. Avisa al administrador.'],
+ [/User already registered.*/i,'Ese correo ya está registrado.'],
+ [/Signups not allowed.*/i,'El registro de usuarios nuevos está desactivado en la configuración de autenticación.'],
+ [/(Email address .* is invalid|Unable to validate email).*/i,'El correo no es válido.'],
+ [/email rate limit exceeded.*/i,'Se enviaron demasiados correos. Espera un rato e intenta de nuevo.'],
+ [/For security purposes.*/i,'Espera unos segundos antes de intentarlo de nuevo.'],
+ [/Password should be.*/i,'La contraseña es demasiado corta.']
+];
+const ROLES_ES={owner:'Dueño',admin:'Administrador',employee:'Empleado'};
+const STES={active:'Activo',paid:'Pagado',pending:'Pendiente',partial:'Parcial',cancelled:'Cancelado',overdue:'Vencida',completed:'Completada',voided:'Anulada'},FRES={weekly:'Semanal',biweekly:'Quincenal',monthly:'Mensual'},PMES={cash:'Efectivo',card:'Tarjeta',transfer:'Transferencia',other:'Otro',credit:'Crédito',mixed:'Mixto'};
+function tr(m){let t=String(m??'');ES_ERR.forEach(([r,e])=>{t=t.replace(r,e);});return t;}
+function trAll(t,cls){t=tr(t);if(cls==='error'&&/\b(the|is|not|of|for|must|should|already|cannot|could|failed|invalid|violates|missing|unable|denied)\b/i.test(t))t='Ocurrió un problema. Intenta de nuevo o avisa al administrador.';return t;}
+function message(id, text, cls='muted'){ $(id).textContent = trAll(text,cls); $(id).className = cls; }
+function confirmar(texto,titulo){return new Promise(res=>{$('confirmTitle').textContent=titulo||'Confirmar';$('confirmText').textContent=texto;$('confirmOverlay').classList.remove('hidden');const done=v=>{$('confirmOverlay').classList.add('hidden');$('confirmForm').onsubmit=null;$('confirmCancel').onclick=null;res(v);};$('confirmForm').onsubmit=e=>{e.preventDefault();done(true);};$('confirmCancel').onclick=()=>done(false);$('confirmOk').focus();});}
+ function setup(){
+  const url = $('supabaseUrl').value.trim().replace(/\/+$/, ''), key = $('supabaseKey').value.trim();
+  if (!url || !key) { message('configMsg','No se pudo conectar con el sistema.'); return false; }
+  if (!/^https:\/\/[a-zA-Z0-9.-]+$/.test(url)) { message('configMsg','No se pudo conectar con el sistema.','error'); return false; }
+  if (!window.supabase) { message('configMsg','No se pudo cargar la biblioteca de conexión. Revisa tu internet.','error'); return false; }
+  localStorage.setItem('ec_supabase_url',url); localStorage.setItem('ec_supabase_key',key);
+  sb = window.supabase.createClient(url,key);
+  $('configPanel').classList.add('hidden'); $('loginPanel').classList.remove('hidden');
+  message('configMsg',''); checkSession(); return true;
+ }
+ async function checkSession(){
+  if (!sb) return;
+  const {data,error} = await sb.auth.getSession();
+  if(error){message('loginMsg',error.message,'error');return;}
+  if(data.session){currentUser=data.session.user; await enterApp();}
+ }
+ async function enterApp(){
+  $('loginPanel').classList.add('hidden'); $('appPanel').classList.remove('hidden'); $('logoutBtn').classList.remove('hidden');
+  $('userLabel').textContent = currentUser.email || '';
+  const {data:prof,error:perr} = await sb.from('ec_profiles').select('full_name,role,active').eq('user_id',currentUser.id).maybeSingle();
+  if(perr){message('appMsg','No se pudo leer tu perfil. Intenta de nuevo o avisa al administrador.','error');return;}
+  profile=prof;
+  if(!profile || !profile.active){message('appMsg','Tu usuario no está activo. Pide al dueño que lo active.','error');await sb.auth.signOut();return;}
+  $('welcome').textContent = 'Hola, '+(profile.full_name || currentUser.email || 'usuario');
+  $('roleTag').textContent = ROLES_ES[profile.role]||profile.role;
+  $('newProductBtn').classList.toggle('hidden',!canEditProducts());$('newCustomerBtn').classList.toggle('hidden',!canEditProducts());$('navReports').classList.toggle('hidden',!canEditProducts());$('navUsers').classList.toggle('hidden',!isOwner());loadBiz();
+  await refreshAll();
+ }
+ async function countTable(table, id){
+  let query = sb.from(table).select('*',{count:'exact',head:true});
+  if (table === 'ec_products' || table === 'ec_customers') query = query.eq('active',true);
+  if (table === 'ec_sales') query = query.is('voided_at',null);
+  const {count,error}=await query;
+  if(error){$(id).textContent='—';return;}
+  $(id).textContent=count ?? 0;
+ }
+ async function refreshAll(){
+  await Promise.all([countTable('ec_products','statProducts'),countTable('ec_customers','statCustomers'),countTable('ec_sales','statSales'),loadProducts(),loadCustomers(),loadSales()]);
+  $('statLow').textContent=products.filter(p=>Number(p.stock_quantity||0)<=Number(p.low_stock_threshold||0)).length;
+ }
+ async function loadProducts(){
+  const {data,error}=await sb.from('ec_products').select('id,name,brand,model,condition,retail_price,wholesale_price,stock_quantity,low_stock_threshold,active').eq('active',true).order('name');
+  if(error){$('productsTable').innerHTML='<p class="error">Error consultando productos: '+esc(tr(error.message))+'</p>';products=[];return;}
+  products=data||[]; renderProducts(); if(!$('saleForm').classList.contains('hidden')){cart=cart.filter(c=>products.some(p=>p.id===c.id));sfRenderResults();sfRenderCart();} if(!$('quoteForm').classList.contains('hidden')){qCart=qCart.filter(c=>products.some(p=>p.id===c.id));qRenderResults();qRenderCart();}
+ }
+ const COND_ES={new:'Nuevo',used:'Usado',refurbished:'Reacondicionado'};
+ const EDIT_ROLES=['owner','admin','dueno','dueño','administrador'];
+ function canEditProducts(){return !!(profile && EDIT_ROLES.includes(String(profile.role||'').toLowerCase()));}
+ function renderProducts(){
+  const q=$('productSearch').value.toLowerCase().trim(), edit=canEditProducts();
+  const list=products.filter(p=>[p.name,p.brand,p.model].some(v=>(v||'').toLowerCase().includes(q)));
+  if(!list.length){$('productsTable').innerHTML='<div class="empty">No hay productos para mostrar.</div>';return;}
+  $('productsTable').innerHTML='<table><thead><tr><th>Producto</th><th>Condición</th><th>Precio venta</th><th>Stock</th>'+(edit?'<th>Acción</th>':'')+'</tr></thead><tbody>'+list.map(p=>{const low=Number(p.stock_quantity||0)<=Number(p.low_stock_threshold||0);return '<tr><td>'+esc([p.brand,p.model,p.name].filter(Boolean).join(' '))+'</td><td>'+esc(COND_ES[p.condition]||p.condition||'—')+'</td><td>'+money(p.retail_price)+'</td><td>'+(low?'<span style="color:#b42318;font-weight:700">':'')+Number(p.stock_quantity||0)+(low?'</span>':'')+'</td>'+(edit?'<td><div class="actions"><button type="button" class="secondary" data-prod-edit="'+esc(p.id)+'">Editar</button><button type="button" class="secondary" data-prod-off="'+esc(p.id)+'">Desactivar</button></div></td>':'')+'</tr>';}).join('')+'</tbody></table>';
+  $('productsTable').querySelectorAll('[data-prod-edit]').forEach(b=>b.addEventListener('click',()=>openProductForm(b.dataset.prodEdit)));
+  $('productsTable').querySelectorAll('[data-prod-off]').forEach(b=>b.addEventListener('click',()=>deactivateProduct(b.dataset.prodOff)));
+ }
+ function openProductForm(id){
+  if(!canEditProducts())return;
+  const p=id?products.find(x=>String(x.id)===String(id)):null;
+  $('productFormTitle').textContent=p?'Editar producto':'Nuevo producto';
+  $('pfId').value=p?p.id:'';$('pfName').value=p?.name||'';$('pfBrand').value=p?.brand||'';$('pfModel').value=p?.model||'';$('pfCondition').value=p?.condition||'';
+  $('pfRetail').value=p?.retail_price??'';$('pfWholesale').value=p?.wholesale_price??'';$('pfStock').value=p?.stock_quantity??0;$('pfLow').value=p?.low_stock_threshold??1;
+  message('pfMsg','');$('productForm').classList.remove('hidden');$('productForm').scrollIntoView({behavior:'smooth',block:'start'});$('pfName').focus();
+ }
+ async function saveProduct(e){
+  e.preventDefault();if(!canEditProducts())return;
+  const num=(id,def=null)=>{const v=$(id).value.trim();return v===''?def:Number(v);};
+  const row={name:$('pfName').value.trim(),brand:$('pfBrand').value.trim()||null,model:$('pfModel').value.trim()||null,condition:$('pfCondition').value.trim()||null,retail_price:num('pfRetail'),wholesale_price:num('pfWholesale'),stock_quantity:num('pfStock',0),low_stock_threshold:num('pfLow',0)};
+  if(!row.name){message('pfMsg','El nombre es obligatorio.','error');return;}
+  for(const k of ['retail_price','wholesale_price','stock_quantity','low_stock_threshold']){if(row[k]!==null&&(!Number.isFinite(row[k])||row[k]<0)){message('pfMsg','Revisa los números: no pueden ser negativos.','error');return;}}
+  if(row.retail_price===null){message('pfMsg','El precio de venta es obligatorio.','error');return;}
+  if(!Number.isInteger(row.stock_quantity)||!Number.isInteger(row.low_stock_threshold)){message('pfMsg','El stock debe ser un número entero.','error');return;}
+  const btn=$('productForm').querySelector('button[type=submit]');btn.disabled=true;message('pfMsg','Guardando…');
+  try{
+   const id=$('pfId').value;
+   const q=id?sb.from('ec_products').update(row).eq('id',id).select('id'):sb.from('ec_products').insert({...row,active:true}).select('id');
+   const {data,error}=await q;if(error)throw error;
+   if(!data||!data.length)throw new Error('No se pudo guardar el cambio. Es posible que no tengas permiso.');
+   $('productForm').classList.add('hidden');await refreshAll();
+   message('appMsg',id?'Producto actualizado.':'Producto creado.','success');
+  }catch(err){message('pfMsg','No se pudo guardar: '+(err.message||String(err)),'error');}
+  finally{btn.disabled=false;}
+ }
+ async function deactivateProduct(id){
+  if(!canEditProducts())return;const p=products.find(x=>String(x.id)===String(id));
+  if(!p||!await confirmar('¿Desactivar "'+(p.name||'producto')+'"? Dejará de aparecer en el catálogo.'))return;
+  const {data,error}=await sb.from('ec_products').update({active:false}).eq('id',id).select('id');
+  if(error||!data||!data.length){message('appMsg','No se pudo desactivar: '+(error?error.message:'sin permiso.'),'error');return;}
+  await refreshAll();message('appMsg','Producto desactivado.','success');
+ }
+ async function loadCustomers(){
+  const {data,error}=await sb.from('ec_customers').select('id,full_name,phone,email,active').eq('active',true).order('full_name');
+  if(error){$('customersTable').innerHTML='<p class="error">Error consultando clientes: '+esc(tr(error.message))+'</p>';customers=[];return;}
+  customers=data||[];renderCustomers();
+ }
+ function renderCustomers(){
+  const q=$('customerSearch').value.toLowerCase().trim(), edit=canEditProducts();
+  const list=customers.filter(c=>[c.full_name,c.phone,c.email].some(v=>String(v||'').toLowerCase().includes(q)));
+  if(!list.length){$('customersTable').innerHTML='<div class="empty">No hay clientes para mostrar.</div>';return;}
+  $('customersTable').innerHTML='<table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Correo</th>'+(edit?'<th>Acción</th>':'')+'</tr></thead><tbody>'+list.map(c=>'<tr><td>'+esc(c.full_name||'—')+'</td><td>'+esc(c.phone||'—')+'</td><td>'+esc(c.email||'—')+'</td>'+(edit?'<td><div class="actions"><button type="button" class="secondary" data-cust-edit="'+esc(c.id)+'">Editar</button><button type="button" class="secondary" data-cust-off="'+esc(c.id)+'">Eliminar</button></div></td>':'')+'</tr>').join('')+'</tbody></table>';
+  $('customersTable').querySelectorAll('[data-cust-edit]').forEach(b=>b.addEventListener('click',()=>openCustomerForm(b.dataset.custEdit)));
+  $('customersTable').querySelectorAll('[data-cust-off]').forEach(b=>b.addEventListener('click',()=>deactivateCustomer(b.dataset.custOff)));
+ }
+ function openCustomerForm(id){
+  if(!canEditProducts())return;
+  const c=id?customers.find(x=>String(x.id)===String(id)):null;
+  $('customerFormTitle').textContent=c?'Editar cliente':'Nuevo cliente';
+  $('cfId').value=c?c.id:'';$('cfName').value=c?.full_name||'';$('cfPhone').value=c?.phone||'';$('cfEmail').value=c?.email||'';
+  message('cfMsg','');$('customerForm').classList.remove('hidden');$('customerForm').scrollIntoView({behavior:'smooth',block:'start'});$('cfName').focus();
+ }
+ async function saveCustomer(e){
+  e.preventDefault();if(!canEditProducts())return;
+  const row={full_name:$('cfName').value.trim(),phone:$('cfPhone').value.trim()||null,email:$('cfEmail').value.trim()||null};
+  if(!row.full_name){message('cfMsg','El nombre es obligatorio.','error');return;}
+  const btn=$('customerForm').querySelector('button[type=submit]');btn.disabled=true;message('cfMsg','Guardando…');
+  try{
+   const id=$('cfId').value;
+   const q=id?sb.from('ec_customers').update(row).eq('id',id).select('id'):sb.from('ec_customers').insert({...row,active:true}).select('id');
+   const {data,error}=await q;if(error)throw error;
+   if(!data||!data.length)throw new Error('No se pudo guardar el cambio. Es posible que no tengas permiso.');
+   $('customerForm').classList.add('hidden');await refreshAll();
+   message('appMsg',id?'Cliente actualizado.':'Cliente creado.','success');
+  }catch(err){message('cfMsg','No se pudo guardar: '+(err.message||String(err)),'error');}
+  finally{btn.disabled=false;}
+ }
+ async function deactivateCustomer(id){
+   if(!canEditProducts())return;const c=customers.find(x=>String(x.id)===String(id));
+   if(!c||!await confirmar('¿Eliminar a "'+(c.full_name||'cliente')+'"? Si tiene facturas, créditos o cotizaciones no se borra: se oculta de la lista para no perder su historial.','Eliminar cliente'))return;
+   const {data,error}=await sb.rpc('ec_delete_customer',{p_customer_id:id});
+   if(error){message('appMsg','No se pudo eliminar el cliente: '+error.message,'error');return;}
+   await refreshAll();
+   message('appMsg',data&&data.deleted?'Cliente eliminado.':'El cliente tiene historial, por eso se ocultó de la lista en lugar de borrarse.','success');
+  }
+  async function loadSales(){
+  const {data,error}=await sb.from('ec_sales').select('*').order('created_at',{ascending:false}).limit(50);
+  if(error){$('salesTable').innerHTML='<p class="error">Error consultando facturas: '+esc(tr(error.message))+'</p>';return;}
+  if(!data || !data.length){$('salesTable').innerHTML='<div class="empty">Todavía no hay facturas registradas.</div>';return;}
+  const cmap=await creditInfoForSales(data.filter(s=>s.payment_method==='credit').map(s=>s.id));const ci=s=>s.voided_at?null:cmap[s.id];$('salesTable').innerHTML='<table><thead><tr><th>Factura</th><th>Fecha</th><th>Estado</th><th>Total</th><th>Pagado</th><th>Balance</th><th></th></tr></thead><tbody>'+data.map(s=>'<tr><td>'+esc(String(s.invoice_number ?? s.id ?? '—'))+'</td><td>'+ (s.created_at?new Date(s.created_at).toLocaleDateString('es-DO'):'—')+'</td><td>'+(s.voided_at?'<span class=\"tag\" style=\"background:#fee4e2;color:#b42318\">Anulada</span>':esc(STES[s.status]||s.status||'—'))+'</td><td>'+money(s.total)+'</td><td>'+money(ci(s)?ci(s).paid:(s.amount_paid ?? s.paid_amount))+'</td><td>'+money(ci(s)?ci(s).balance:(s.balance_due ?? (Number(s.total||0)-Number(s.amount_paid ?? s.paid_amount ?? 0))))+'</td><td><div class="actions"><button type="button" class="secondary" data-s-print="'+esc(s.id)+'">Ver / Imprimir</button>'+(canEditProducts()&&!s.voided_at&&s.status==='completed'?'<button type="button" class="secondary" data-s-void="'+esc(s.id)+'">Anular</button>':'')+'</div></td></tr>').join('')+'</tbody></table>';
+  salesCache=data;$('salesTable').querySelectorAll('[data-s-print]').forEach(b=>b.addEventListener('click',()=>printDoc('sale',salesCache.find(x=>x.id===b.dataset.sPrint))));$('salesTable').querySelectorAll('[data-s-void]').forEach(b=>b.addEventListener('click',()=>voidSale(b.dataset.sVoid)));$('statSales').textContent=data.filter(x=>!x.voided_at).length;
+ }
+
+
+ async function creditInfoForSales(ids){
+  const out={};if(!ids||!ids.length)return out;
+  const {data,error}=await sb.from('ec_customer_credits').select('id,sale_id,initial_payment,interest_amount,status,ec_credit_installments(id,installment_number,amount_due,amount_paid,late_fee_charged,late_fee_paid,late_fee_waived),ec_credit_payments(amount,payment_method,reference,created_at,installment_id)').in('sale_id',ids);
+  if(error||!data)return out;
+  data.forEach(c=>{
+   const ins=c.ec_credit_installments||[],pay=(c.ec_credit_payments||[]).slice().sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+   const paidCuotas=r2(pay.reduce((a,p)=>a+Number(p.amount||0),0));
+   const balance=r2(ins.reduce((a,i)=>a+Math.max(0,Number(i.amount_due||0)-Number(i.amount_paid||0))+feeOf(i),0));
+   out[c.sale_id]={interest:Number(c.interest_amount||0),initial:Number(c.initial_payment||0),pay,num:id=>(ins.find(x=>x.id===id)||{}).installment_number,paid:r2(Number(c.initial_payment||0)+paidCuotas),balance,status:c.status};
+  });
+  return out;
+ }
+ function credPayHtml(ci,pays,PM,saleDate){
+  const rows=pays.map(p=>'<tr><td>'+saleDate+'</td><td>Inicial</td><td>'+esc(PM[p.payment_method]||p.payment_method||'—')+'</td><td>'+money(p.amount)+'</td></tr>').join('')+ci.pay.map(p=>'<tr><td>'+fdate(p.created_at)+'</td><td>Pago de cuota'+(ci.num(p.installment_id)?' #'+ci.num(p.installment_id):'')+'</td><td>'+esc(PM[p.payment_method]||p.payment_method||'—')+'</td><td>'+money(p.amount)+'</td></tr>').join('');
+  return '<h3 style="margin-top:14px">Pagos del crédito</h3><table><thead><tr><th>Fecha</th><th>Concepto</th><th>Método</th><th>Monto</th></tr></thead><tbody>'+(rows||'<tr><td colspan="4">Sin pagos registrados.</td></tr>')+'</tbody></table><div class="tot">Total pagado: <strong>'+money(ci.paid)+'</strong><br>Saldo pendiente del crédito (con interés y recargos): <strong style="font-size:18px">'+money(ci.balance)+'</strong></div>';
+ }
+ const feeOf=i=>Math.max(0,Math.round((Number(i.late_fee_charged||0)-Number(i.late_fee_paid||0)-Number(i.late_fee_waived||0)+Number.EPSILON)*100)/100);
+ function isOwner(){return !!(profile&&['owner','dueno','dueño'].includes(String(profile.role||'').toLowerCase()));}
+ const CC_FREQ=[['weekly','Semanal'],['biweekly','Quincenal'],['monthly','Mensual']];
+ let ccCart=[];
+ const ccLabel=p=>[p.brand,p.model,p.name].filter(Boolean).join(' ');
+ function ccOpen(){
+  ccCart=[];['ccSearch','ccNotes','ccInterest','ccLate','ccCount','ccFirst'].forEach(i=>$(i).value='');$('ccInitial').value='0';$('ccItbis').checked=false;$('ccInitialMethod').value='cash';message('ccMsg','');
+  $('ccCustomer').innerHTML='<option value="">Selecciona un cliente…</option>'+customers.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.full_name||'Cliente')+(c.phone?' · '+esc(c.phone):'')+'</option>').join('');
+  $('ccFreq').innerHTML=CC_FREQ.map(f=>'<option value="'+f[0]+'">'+f[1]+'</option>').join('');
+  $('creditSaleForm').classList.remove('hidden');ccRenderResults();ccRenderCart();$('creditSaleForm').scrollIntoView({behavior:'smooth',block:'start'});
+ }
+ function ccRenderResults(){
+  const q=$('ccSearch').value.toLowerCase().trim(),sel=$('ccProduct'),prev=sel.value;
+  const list=products.filter(p=>!q||[p.name,p.brand,p.model].some(v=>(v||'').toLowerCase().includes(q)));
+  sel.innerHTML='<option value="">'+(list.length?'Selecciona un producto…':'No hay productos que coincidan')+'</option>'+list.map(p=>{const st=Number(p.stock_quantity||0);return '<option value="'+esc(p.id)+'"'+(st<=0?' disabled':'')+'>'+esc(ccLabel(p))+' — '+money(p.retail_price)+(st>0?' · stock '+st:' · SIN STOCK')+'</option>';}).join('');
+  if(list.some(p=>String(p.id)===prev))sel.value=prev;
+  $('ccEmpty').textContent=!products.length?'No hay productos activos. Agrégalos en Productos.':'';
+ }
+ function ccAdd(id){
+  const p=products.find(x=>String(x.id)===String(id));if(!p)return;
+  if(Number(p.stock_quantity||0)<=0){message('ccMsg','Ese producto no tiene stock.','error');return;}
+  const it=ccCart.find(c=>c.id===p.id);if(it){if(it.qty<Number(p.stock_quantity))it.qty++;}else ccCart.push({id:p.id,qty:1});
+  $('ccSearch').value='';ccRenderResults();$('ccProduct').value='';ccRenderCart();message('ccMsg','Agregado: '+ccLabel(p),'success');
+ }
+ function ccRenderCart(){
+  if(!ccCart.length){$('ccCart').innerHTML='<div class="empty">Aún no has agregado productos.</div>';ccTotals();return;}
+  $('ccCart').innerHTML='<table style="min-width:0"><thead><tr><th>Producto</th><th>Cant.</th><th>Importe</th><th></th></tr></thead><tbody>'+ccCart.map(c=>{const p=products.find(x=>x.id===c.id);if(!p)return '';return '<tr><td>'+esc(ccLabel(p))+'<div class="muted">'+money(p.retail_price)+' c/u · stock '+Number(p.stock_quantity||0)+'</div></td><td><input type="number" min="1" max="'+Number(p.stock_quantity||0)+'" step="1" value="'+c.qty+'" data-cc-qty="'+esc(c.id)+'" style="width:72px;padding:8px;border:1px solid #cbd5e1;border-radius:8px" inputmode="numeric"></td><td><span data-cc-amt="'+esc(c.id)+'">'+money(r2(Number(p.retail_price||0)*c.qty))+'</span></td><td><button type="button" class="secondary" data-cc-del="'+esc(c.id)+'">✕</button></td></tr>';}).join('')+'</tbody></table>';
+  $('ccCart').querySelectorAll('[data-cc-qty]').forEach(i=>i.addEventListener('change',()=>{const c=ccCart.find(x=>x.id===i.dataset.ccQty),p=products.find(x=>x.id===i.dataset.ccQty);let v=Math.floor(Number(i.value));if(!Number.isFinite(v)||v<1)v=1;if(v>Number(p.stock_quantity))v=Number(p.stock_quantity);c.qty=v;i.value=v;const am=$('ccCart').querySelector('[data-cc-amt="'+i.dataset.ccQty+'"]');if(am)am.textContent=money(r2(Number(p.retail_price||0)*v));ccTotals();}));
+  $('ccCart').querySelectorAll('[data-cc-del]').forEach(b=>b.addEventListener('click',()=>{ccCart=ccCart.filter(x=>x.id!==b.dataset.ccDel);ccRenderCart();}));
+  ccTotals();
+ }
+ function ccCalc(){
+  const sub=r2(ccCart.reduce((a,c)=>{const p=products.find(x=>x.id===c.id);return a+(p?r2(Number(p.retail_price||0)*c.qty):0);},0));
+  const tax=$('ccItbis').checked?r2(sub*0.18):0,total=r2(sub+tax),ini=r2(Number($('ccInitial').value||0));
+  return {sub,tax,total,ini,fin:r2(total-ini)};
+ }
+ function ccTotals(){const t=ccCalc();$('ccTotals').innerHTML='Subtotal: <strong>'+money(t.sub)+'</strong><br>ITBIS (18%): <strong>'+money(t.tax)+'</strong><br>Total de la factura: <strong>'+money(t.total)+'</strong><br>Inicial: <strong>'+money(t.ini)+'</strong><br>Monto a financiar (sin interés): <strong style="font-size:20px">'+money(t.fin)+'</strong><br><span class="muted">El interés y las cuotas los calcula el sistema al registrar.</span>';}
+ async function ccSubmit(e){
+  e.preventDefault();
+  if(!isOwner()){message('ccMsg','Solo el dueño puede registrar ventas a crédito.','error');return;}
+  if(!$('ccCustomer').value){message('ccMsg','Selecciona el cliente.','error');return;}
+  if(!ccCart.length){message('ccMsg','Agrega al menos un producto.','error');return;}
+  const t=ccCalc(),interest=Number($('ccInterest').value),late=Number($('ccLate').value),count=Math.floor(Number($('ccCount').value));
+  if(!(t.ini>=0)||t.ini>=t.total){message('ccMsg','La inicial debe ser 0 o más y menor que el total.','error');return;}
+  if(!Number.isFinite(interest)||interest<0||!Number.isFinite(late)||late<0){message('ccMsg','Revisa el interés y el recargo: deben ser 0 o más.','error');return;}
+  if(!Number.isFinite(count)||count<1){message('ccMsg','Escribe el número de cuotas.','error');return;}
+  if(!$('ccFirst').value){message('ccMsg','Escribe la primera fecha de pago.','error');return;}
+  if(!await confirmar('¿Registrar crédito por '+money(t.total)+' con inicial de '+money(t.ini)+', '+count+' cuota(s), interés '+interest+'% mensual y recargo '+late+'%? Se descontará el inventario.'))return;
+  const btn=$('ccSubmit');btn.disabled=true;message('ccMsg','Registrando crédito…');
+  try{
+   const {data,error}=await sb.rpc('ec_create_credit_sale',{p_customer_id:$('ccCustomer').value,p_items:ccCart.map(c=>({product_id:c.id,quantity:c.qty})),p_apply_itbis:$('ccItbis').checked,p_initial_payment:t.ini,p_initial_method:$('ccInitialMethod').value,p_interest_percent:interest,p_late_fee_percent:late,p_frequency:$('ccFreq').value,p_installments:count,p_first_due_date:$('ccFirst').value,p_notes:$('ccNotes').value.trim()||null});
+   if(error)throw error;
+   $('creditSaleForm').classList.add('hidden');ccCart=[];await refreshAll();await loadCredits();
+   message('creditsMsg','Venta a crédito registrada por '+money(t.total)+'.','success');
+  }catch(err){message('ccMsg','No se pudo registrar: '+(err.message||String(err)),'error');}
+  finally{btn.disabled=false;}
+ }
+
+ let usersCache=[];
+ async function loadUsers(){
+  if(!sb||!isOwner()){$('usersTable').innerHTML='';return;}
+  message('usersMsg','Cargando usuarios…');
+  const {data,error}=await sb.rpc('ec_list_users');
+  if(error){message('usersMsg','No se pudieron cargar los usuarios: '+error.message,'error');return;}
+  usersCache=data||[];message('usersMsg','');
+  $('usersTable').innerHTML='<table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acción</th></tr></thead><tbody>'+usersCache.map(u=>{
+   const own=u.role==='owner'||(currentUser&&u.user_id===currentUser.id);
+   const act=own?'—':'<div class="actions"><button type="button" class="secondary" data-u-act="role" data-u-id="'+esc(u.user_id)+'">'+(u.role==='admin'?'Pasar a empleado':'Pasar a administrador')+'</button><button type="button" class="secondary" data-u-act="active" data-u-id="'+esc(u.user_id)+'">'+(u.active?'Desactivar':'Activar')+'</button></div>';
+   return '<tr><td>'+esc(u.full_name||'—')+'</td><td>'+esc(u.email||'—')+'</td><td>'+esc(ROLES_ES[u.role]||u.role)+'</td><td>'+(u.active?'Activo':'<span class="tag">Desactivado</span>')+'</td><td>'+act+'</td></tr>';
+  }).join('')+'</tbody></table>';
+ }
+ async function createUser(e){
+  e.preventDefault();if(!isOwner())return;
+  const name=$('ufName').value.trim(),email=$('ufEmail').value.trim().toLowerCase(),pass=$('ufPass').value,role=$('ufRole').value;
+  if(name.length<2){message('ufMsg','Escribe el nombre del usuario.','error');return;}
+  if(pass.length<8){message('ufMsg','La contraseña debe tener al menos 8 caracteres.','error');return;}
+  const btn=$('ufSave');btn.disabled=true;message('ufMsg','Creando usuario…');
+  try{
+   const tmp=window.supabase.createClient($('supabaseUrl').value.trim().replace(/\/+$/,''),$('supabaseKey').value.trim(),{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+   const {data,error}=await tmp.auth.signUp({email,password:pass,options:{data:{full_name:name}}});
+   if(error)throw error;
+   const uid=data&&data.user&&data.user.id;
+   if(!uid||(data.user.identities&&data.user.identities.length===0))throw new Error('Ese correo ya está registrado.');
+   const {error:e2}=await sb.rpc('ec_save_user',{p_user_id:uid,p_full_name:name,p_role:role,p_active:true});
+   if(e2)throw e2;
+   $('userForm').reset();$('userForm').classList.add('hidden');message('ufMsg','');
+   await loadUsers();message('usersMsg','Usuario creado. Ya puede iniciar sesión con su correo y contraseña.','success');
+  }catch(err){message('ufMsg','No se pudo crear el usuario: '+(err.message||String(err)),'error');}
+  finally{btn.disabled=false;}
+ }
+ let creditsCache=[], selectedCredit=null, selectedInstallment=null;
+ async function loadCredits(){
+  if(!sb)return;
+  $('ccBtnWrap').classList.toggle('hidden',!isOwner());message('creditsMsg','Consultando créditos…');try{await sb.rpc('ec_accrue_late_fees');}catch(_e){}
+  const {data,error}=await sb.from('ec_customer_credits').select('id,customer_id,monthly_interest_rate,late_fee_percent,principal_amount,interest_amount,initial_payment,financed_amount,frequency,installments_count,first_due_date,status,created_at,notes,ec_customers(full_name,phone)').order('created_at',{ascending:false}).limit(500);
+  if(error){$('creditsTable').innerHTML='<p class="error">No se pudieron consultar los créditos: '+esc(tr(error.message))+'</p>';message('creditsMsg','Intenta de nuevo o avisa al administrador.','error');return;}
+  creditsCache=data||[];renderCredits();message('creditsMsg',creditsCache.length+' crédito(s) encontrado(s).');
+ }
+ function renderCredits(){
+  const q=$('creditSearch').value.toLowerCase().trim(), st=$('creditStatusFilter').value;
+  const rows=creditsCache.filter(c=>{const cust=Array.isArray(c.ec_customers)?c.ec_customers[0]:c.ec_customers;return (st==='all'||c.status===st)&&[cust?.full_name,cust?.phone,c.id].some(v=>String(v||'').toLowerCase().includes(q));});
+  if(!rows.length){$('creditsTable').innerHTML='<div class="empty">No hay créditos que coincidan con la búsqueda.</div>';return;}
+  $('creditsTable').innerHTML='<table><thead><tr><th>Cliente</th><th>Teléfono</th><th>Monto financiado</th><th>Frecuencia</th><th>Cuotas</th><th>Estado</th><th>Acción</th></tr></thead><tbody>'+rows.map(c=>{const cust=Array.isArray(c.ec_customers)?c.ec_customers[0]:c.ec_customers;return '<tr><td>'+esc(cust?.full_name||'Cliente sin nombre')+'</td><td>'+esc(cust?.phone||'—')+'</td><td>'+money(c.financed_amount)+'</td><td>'+esc(FRES[c.frequency]||c.frequency||'—')+'</td><td>'+esc(c.installments_count??'—')+'</td><td>'+esc(STES[c.status]||c.status||'—')+'</td><td><button type="button" class="secondary" data-credit-open="'+esc(c.id)+'">Ver cuotas</button></td></tr>';}).join('')+'</tbody></table>';
+  $('creditsTable').querySelectorAll('[data-credit-open]').forEach(b=>b.addEventListener('click',()=>openCredit(b.dataset.creditOpen)));
+ }
+ async function openCredit(id){
+  selectedCredit=creditsCache.find(c=>c.id===id); if(!selectedCredit)return;
+  $('creditDetail').classList.remove('hidden');$('deleteCreditBtn').classList.toggle('hidden',!canEditProducts());$('creditPaymentForm').classList.add('hidden');$('creditDetailTitle').textContent='Cuotas del crédito';
+  const cust=Array.isArray(selectedCredit.ec_customers)?selectedCredit.ec_customers[0]:selectedCredit.ec_customers;
+  $('creditSummary').textContent=(cust?.full_name||'Cliente')+' · Financiado: '+money(selectedCredit.financed_amount)+' · Interés mensual: '+(selectedCredit.monthly_interest_rate??'—')+'% · Recargo por atraso: '+(selectedCredit.late_fee_percent??'—')+'% · Estado: '+(STES[selectedCredit.status]||selectedCredit.status||'—');
+  $('installmentsTable').innerHTML='<div class="empty">Cargando cuotas…</div>';$('creditPaymentsTable').innerHTML='<div class="empty">Cargando historial…</div>';
+  const [ir,pr]=await Promise.all([sb.from('ec_credit_installments').select('id,credit_id,installment_number,due_date,amount_due,amount_paid,status,principal_due,interest_due,late_fee_charged,late_fee_paid,late_fee_waived').eq('credit_id',id).order('installment_number'),sb.from('ec_credit_payments').select('id,installment_id,amount,payment_method,reference,received_by,created_at').eq('credit_id',id).order('created_at',{ascending:false})]);
+  if(ir.error){$('installmentsTable').innerHTML='<p class="error">Error al consultar cuotas: '+esc(tr(ir.error.message))+'</p>';return;}
+  const ins=ir.data||[];
+  if(!ins.length){$('installmentsTable').innerHTML='<div class="empty">Este crédito no tiene cuotas registradas.</div>';}
+  else $('installmentsTable').innerHTML='<table><thead><tr><th>Cuota</th><th>Vence</th><th>Monto</th><th>Pagado</th><th>Recargo pendiente</th><th>Total a cobrar</th><th>Estado</th><th>Acción</th></tr></thead><tbody>'+ins.map(i=>{const fee=feeOf(i),rem=Math.max(0,Number(i.amount_due||0)-Number(i.amount_paid||0)),tot=r2(rem+fee);const feeTxt=Number(i.late_fee_charged||0)>0?money(fee)+'<div class="muted">cargado '+money(i.late_fee_charged)+(Number(i.late_fee_waived||0)>0?' · perdonado '+money(i.late_fee_waived):'')+'</div>':'—';let act='';if(selectedCredit.status==='active'&&tot>0)act+='<button type="button" data-pay-installment="'+esc(i.id)+'" data-remaining="'+tot.toFixed(2)+'">Cobrar</button> ';if(canEditProducts()&&fee>0)act+='<button type="button" class="secondary" data-waive-installment="'+esc(i.id)+'" data-fee="'+fee.toFixed(2)+'">Perdonar recargo</button>';return '<tr><td>'+i.installment_number+'</td><td>'+esc(i.due_date||'—')+'</td><td>'+money(i.amount_due)+'</td><td>'+money(i.amount_paid)+'</td><td>'+feeTxt+'</td><td>'+money(tot)+'</td><td>'+esc(STES[i.status]||i.status)+'</td><td>'+(act||'—')+'</td></tr>';}).join('')+'</tbody></table>';
+  $('installmentsTable').querySelectorAll('[data-pay-installment]').forEach(b=>b.addEventListener('click',()=>showPaymentForm(id,b.dataset.payInstallment,Number(b.dataset.remaining))));
+  if(pr.error){$('creditPaymentsTable').innerHTML='<p class="error">Error al consultar historial: '+esc(tr(pr.error.message))+'</p>';}
+  else if(!pr.data?.length){$('creditPaymentsTable').innerHTML='<div class="empty">Todavía no hay cobros registrados.</div>';}
+  else $('creditPaymentsTable').innerHTML='<table><thead><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Referencia</th><th>Acción</th></tr></thead><tbody>'+pr.data.map(p=>'<tr><td>'+new Date(p.created_at).toLocaleString('es-DO')+'</td><td>'+money(p.amount)+'</td><td>'+esc(PMES[p.payment_method]||p.payment_method)+'</td><td>'+esc(p.reference||'—')+'</td><td>'+(isOwner()?'<button type="button" class="secondary" data-void-payment="'+esc(p.id)+'" data-amount="'+Number(p.amount||0).toFixed(2)+'">Anular</button>':'—')+'</td></tr>').join('')+'</tbody></table>';
+ }
+ function showPaymentForm(creditId,installmentId,remaining){selectedInstallment=installmentId;$('payCreditId').value=creditId;$('payInstallmentId').value=installmentId;$('payAmount').value=remaining.toFixed(2);$('payAmount').max=remaining.toFixed(2);$('payInstallmentInfo').textContent='Saldo pendiente de esta cuota: '+money(remaining)+'. No puedes cobrar más que este monto.';$('paymentMsg').textContent='';$('paymentMsg').className='muted';$('creditPaymentForm').classList.remove('hidden');$('creditPaymentForm').scrollIntoView({behavior:'smooth',block:'start'});}
+ async function submitCreditPayment(e){e.preventDefault();if(!selectedCredit||!selectedInstallment)return;const amount=Number($('payAmount').value);if(!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100){message('paymentMsg','Escribe un monto positivo con máximo dos decimales.','error');return;}const btn=$('creditPaymentForm').querySelector('button[type=submit]');btn.disabled=true;message('paymentMsg','Registrando pago de forma segura…');try{const {data,error}=await sb.rpc('ec_register_installment_payment',{p_credit_id:$('payCreditId').value,p_installment_id:$('payInstallmentId').value,p_amount:amount,p_payment_method:$('payMethod').value,p_reference:$('payReference').value.trim()||null});if(error)throw error;message('paymentMsg','Pago registrado. '+(data?.status?'Estado: '+data.status+'.':''),'success');$('payReference').value='';await loadCredits();await openCredit(selectedCredit.id);loadSales();}catch(err){message('paymentMsg','No se pudo registrar el pago: '+(err.message||String(err)),'error');}finally{btn.disabled=false;}}
+ let cart=[];
+ const r2=n=>Math.round((Number(n)+Number.EPSILON)*100)/100;
+ function sfOpen(){
+  cart=[];$('sfSearch').value='';$('sfRef').value='';$('sfNotes').value='';$('sfItbis').checked=false;$('sfMethod').value='cash';message('sfMsg','');
+  $('sfCustomer').innerHTML='<option value="">Consumidor final</option>'+customers.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.full_name||'Cliente')+(c.phone?' · '+esc(c.phone):'')+'</option>').join('');
+  $('saleForm').classList.remove('hidden');sfRenderResults();sfRenderCart();$('saleForm').scrollIntoView({behavior:'smooth',block:'start'});
+ }
+ function sfRenderResults(){
+  const q=$('sfSearch').value.toLowerCase().trim(), sel=$('sfProduct'), prev=sel.value;
+  const list=products.filter(p=>!q||[p.name,p.brand,p.model].some(v=>(v||'').toLowerCase().includes(q)));
+  sel.innerHTML='<option value="">'+(list.length?'Selecciona un producto…':'No hay productos que coincidan')+'</option>'+list.map(p=>{const st=Number(p.stock_quantity||0);return '<option value="'+esc(p.id)+'"'+(st<=0?' disabled':'')+'>'+esc([p.brand,p.model,p.name].filter(Boolean).join(' '))+' — '+money(p.retail_price)+(st>0?' · stock '+st:' · SIN STOCK')+'</option>';}).join('');
+  if(list.some(p=>String(p.id)===prev))sel.value=prev;
+  const none=!products.length, zero=products.length&&!products.some(p=>Number(p.stock_quantity||0)>0);
+  $('sfEmpty').textContent=none?'No hay productos activos. Agrégalos en Productos.':(zero?'Ningún producto tiene stock. Edita el producto en Productos y ponle stock.':'');
+ }
+ function sfAdd(id){
+  const p=products.find(x=>String(x.id)===String(id));if(!p)return;
+  if(Number(p.stock_quantity||0)<=0){message('sfMsg','Ese producto no tiene stock. Edítalo en Productos para agregarle stock.','error');return;}
+  const it=cart.find(c=>c.id===p.id);
+  if(it){if(it.qty<Number(p.stock_quantity))it.qty++;}else cart.push({id:p.id,qty:1});
+  $('sfSearch').value='';sfRenderResults();$('sfProduct').value='';sfRenderCart();
+  message('sfMsg','Agregado: '+[p.brand,p.model,p.name].filter(Boolean).join(' '),'success');
+  $('sfCart').scrollIntoView({behavior:'smooth',block:'nearest'});
+ }
+ function sfRenderCart(){
+  if(!cart.length){$('sfCart').innerHTML='<div class="empty">Aún no has agregado productos.</div>';sfTotals();return;}
+  $('sfCart').innerHTML='<table style="min-width:0"><thead><tr><th>Producto</th><th>Cant.</th><th>Importe</th><th></th></tr></thead><tbody>'+cart.map(c=>{const p=products.find(x=>x.id===c.id);if(!p)return '';return '<tr><td>'+esc([p.brand,p.model,p.name].filter(Boolean).join(' '))+'<div class="muted">'+money(p.retail_price)+' c/u · stock '+Number(p.stock_quantity||0)+'</div></td><td><input type="number" min="1" max="'+Number(p.stock_quantity||0)+'" step="1" value="'+c.qty+'" data-sf-qty="'+esc(c.id)+'" style="width:72px;padding:8px;border:1px solid #cbd5e1;border-radius:8px" inputmode="numeric"></td><td><span data-sf-amt="'+esc(c.id)+'">'+money(r2(Number(p.retail_price||0)*c.qty))+'</span></td><td><button type="button" class="secondary" data-sf-del="'+esc(c.id)+'">✕</button></td></tr>';}).join('')+'</tbody></table>';
+  $('sfCart').querySelectorAll('[data-sf-qty]').forEach(i=>i.addEventListener('change',()=>{const c=cart.find(x=>x.id===i.dataset.sfQty),p=products.find(x=>x.id===i.dataset.sfQty);let v=Math.floor(Number(i.value));if(!Number.isFinite(v)||v<1)v=1;if(v>Number(p.stock_quantity))v=Number(p.stock_quantity);c.qty=v;i.value=v;const am=$('sfCart').querySelector('[data-sf-amt="'+i.dataset.sfQty+'"]');if(am)am.textContent=money(r2(Number(p.retail_price||0)*v));sfTotals();}));
+  $('sfCart').querySelectorAll('[data-sf-del]').forEach(b=>b.addEventListener('click',()=>{cart=cart.filter(x=>x.id!==b.dataset.sfDel);sfRenderCart();}));
+  sfTotals();
+ }
+ function sfCalc(){
+  const sub=r2(cart.reduce((a,c)=>{const p=products.find(x=>x.id===c.id);return a+(p?r2(Number(p.retail_price||0)*c.qty):0);},0));
+  const tax=$('sfItbis').checked?r2(sub*0.18):0;return {sub,tax,total:r2(sub+tax)};
+ }
+ function sfTotals(){const t=sfCalc();$('sfTotals').innerHTML='Subtotal: <strong>'+money(t.sub)+'</strong><br>ITBIS (18%): <strong>'+money(t.tax)+'</strong><br>Total a cobrar: <strong style="font-size:20px">'+money(t.total)+'</strong>';}
+ async function sfSubmit(e){
+  e.preventDefault();
+  if(!cart.length){message('sfMsg','Agrega al menos un producto.','error');return;}
+  const t=sfCalc();
+  if(!await confirmar('¿Registrar la factura por '+money(t.total)+'? Se descontará el inventario.'))return;
+  const btn=$('sfSubmit');btn.disabled=true;message('sfMsg','Registrando factura…');
+  try{
+   const {data,error}=await sb.rpc('ec_create_sale',{p_customer_id:$('sfCustomer').value||null,p_items:cart.map(c=>({product_id:c.id,quantity:c.qty})),p_apply_itbis:$('sfItbis').checked,p_payment_method:$('sfMethod').value,p_reference:$('sfRef').value.trim()||null,p_notes:$('sfNotes').value.trim()||null});
+   if(error)throw error;
+   $('saleForm').classList.add('hidden');cart=[];await refreshAll();
+   message('appMsg','Factura #'+data.invoice_number+' registrada por '+money(data.total)+'.','success');
+  }catch(err){message('sfMsg','No se pudo registrar: '+(err.message||String(err)),'error');}
+  finally{btn.disabled=false;}
+ }
+ let qCart=[], quotesCache=[], qOpenId=null;
+ const QST={pending:'Pendiente',approved:'Aprobada',rejected:'Rechazada',converted:'Convertida',cancelled:'Cancelada',expired:'Vencida'};
+ function qStatus(q){return ((q.status==='pending'||q.status==='approved')&&q.expires_at&&new Date(q.expires_at)<new Date())?'expired':q.status;}
+ function qCustName(q){const c=Array.isArray(q.ec_customers)?q.ec_customers[0]:q.ec_customers;return c?.full_name||'Sin cliente';}
+ function fdate(v){return v?new Date(v).toLocaleDateString('es-DO'):'—';}
+ async function loadQuotes(){
+  if(!sb)return;message('quotesMsg','Consultando cotizaciones…');
+  const {data,error}=await sb.from('ec_quotes').select('id,quote_number,customer_id,status,subtotal,discount,tax,total,notes,created_by,created_at,expires_at,ec_customers(full_name,phone),ec_quote_items(description,quantity,unit_price,line_total)').order('created_at',{ascending:false}).limit(200);
+  if(error){$('quotesTable').innerHTML='<p class="error">No se pudieron consultar las cotizaciones: '+esc(tr(error.message))+'</p>';message('quotesMsg','Intenta de nuevo o avisa al administrador.','error');return;}
+  quotesCache=data||[];renderQuotes();message('quotesMsg',quotesCache.length+' cotización(es).');if(qOpenId)openQuote(qOpenId);loadInbox();
+ }
+ function renderQuotes(){
+  const q=$('quoteSearch').value.toLowerCase().trim();
+  const rows=quotesCache.filter(x=>!q||String(x.quote_number).includes(q)||qCustName(x).toLowerCase().includes(q));
+  if(!rows.length){$('quotesTable').innerHTML='<div class="empty">No hay cotizaciones que mostrar.</div>';return;}
+  $('quotesTable').innerHTML='<table><thead><tr><th>N.º</th><th>Cliente</th><th>Fecha</th><th>Vence</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>'+rows.map(x=>'<tr><td>'+esc(x.quote_number)+'</td><td>'+esc(qCustName(x))+'</td><td>'+fdate(x.created_at)+'</td><td>'+fdate(x.expires_at)+'</td><td>'+money(x.total)+'</td><td>'+esc(QST[qStatus(x)]||x.status)+'</td><td><button type="button" class="secondary" data-q-open="'+esc(x.id)+'">Ver</button></td></tr>').join('')+'</tbody></table>';
+  $('quotesTable').querySelectorAll('[data-q-open]').forEach(b=>b.addEventListener('click',()=>openQuote(b.dataset.qOpen)));
+ }
+ function openQuote(id){
+  const x=quotesCache.find(c=>String(c.id)===String(id));if(!x){qOpenId=null;$('quoteDetail').classList.add('hidden');return;}
+  qOpenId=x.id;const st=qStatus(x),open=(st==='pending'||st==='approved');
+  const items=x.ec_quote_items||[];
+  $('quoteDetail').innerHTML='<hr style="border:0;border-top:1px solid var(--line);margin:18px 0"><h2>Cotización #'+esc(x.quote_number)+' · '+esc(QST[st]||st)+'</h2><p class="muted">'+esc(qCustName(x))+' · Creada '+fdate(x.created_at)+' · Vence '+fdate(x.expires_at)+(x.notes?' · '+esc(x.notes):'')+'</p>'
+   +'<div class="tablewrap"><table style="min-width:0"><thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Importe</th></tr></thead><tbody>'+items.map(i=>'<tr><td>'+esc(i.description)+'</td><td>'+esc(i.quantity)+'</td><td>'+money(i.unit_price)+'</td><td>'+money(i.line_total)+'</td></tr>').join('')+'</tbody></table></div>'
+   +'<p style="line-height:1.8">Subtotal: <strong>'+money(x.subtotal)+'</strong>'+(Number(x.discount)>0?'<br>Descuento: <strong>-'+money(x.discount)+'</strong>':'')+'<br>ITBIS: <strong>'+money(x.tax)+'</strong><br>Total: <strong style="font-size:20px">'+money(x.total)+'</strong></p>'
+   +(open?'<div class="panel" style="background:#f8fafc"><h2>Convertir en factura</h2><div class="row"><div class="field"><label for="qcMethod">Forma de pago</label><select id="qcMethod"><option value="cash">Efectivo</option><option value="card">Tarjeta</option><option value="transfer">Transferencia</option></select></div><div class="field"><label for="qcRef">Referencia (opcional)</label><input id="qcRef" maxlength="200" autocomplete="off"></div></div><div class="actions"><button type="button" class="accent" id="qcConvert">Convertir en factura</button><button type="button" class="secondary" id="qcCancelQuote">Cancelar cotización</button><button type="button" class="secondary" id="qcClose">Cerrar</button></div><p id="qcMsg" aria-live="polite"></p></div>':'<div class="actions"><button type="button" class="secondary" id="qcClose">Cerrar</button></div>')+'<div class="actions" style="margin-top:10px"><button type="button" class="secondary" id="qcPrint">Ver / Imprimir</button>'+(st!=='converted'?'<button type="button" class="secondary" id="qcDelete">Eliminar</button>':'')+(open&&!(Number(x.discount)>0)?'<button type="button" class="secondary" id="qcDisc">Pedir descuento (1% a 10%)</button>':'')+'</div><div id="qcDiscInfo" class="muted" style="margin-top:8px"></div>';
+  $('quoteDetail').classList.remove('hidden');
+  const cl=$('qcClose');if(cl)cl.addEventListener('click',()=>{qOpenId=null;$('quoteDetail').classList.add('hidden');});
+  if(open){$('qcConvert').addEventListener('click',()=>convertQuote(x));$('qcCancelQuote').addEventListener('click',()=>cancelQuote(x));}
+  $('qcPrint').addEventListener('click',()=>printDoc('quote',x));const dl=$('qcDelete');if(dl)dl.addEventListener('click',()=>deleteQuote(x));const dc=$('qcDisc');if(dc)dc.addEventListener('click',()=>requestDiscount(x));showDiscInfo(x);
+ }
+ async function convertQuote(x){
+  if(!await confirmar('¿Convertir la cotización #'+x.quote_number+' en factura por '+money(x.total)+'? Se descontará el inventario.'))return;
+  const btn=$('qcConvert');btn.disabled=true;message('qcMsg','Convirtiendo…');
+  try{
+   const {data,error}=await sb.rpc('ec_convert_quote_to_sale',{p_quote_id:x.id,p_payment_method:$('qcMethod').value,p_reference:$('qcRef').value.trim()||null});
+   if(error)throw error;
+   qOpenId=null;$('quoteDetail').classList.add('hidden');await refreshAll();await loadQuotes();
+   message('appMsg','Cotización #'+x.quote_number+' convertida en la factura #'+data.invoice_number+' por '+money(data.total)+'.','success');
+  }catch(err){message('qcMsg','No se pudo convertir: '+(err.message||String(err)),'error');btn.disabled=false;}
+ }
+ async function cancelQuote(x){
+  if(!await confirmar('¿Cancelar la cotización #'+x.quote_number+'?'))return;
+  const {error}=await sb.rpc('ec_cancel_quote',{p_quote_id:x.id});
+  if(error){message('qcMsg','No se pudo cancelar: '+error.message,'error');return;}
+  await loadQuotes();message('appMsg','Cotización #'+x.quote_number+' cancelada.','success');
+ }
+ function qOpen(){
+  qCart=[];$('qfSearch').value='';$('qfNotes').value='';$('qfItbis').checked=false;$('qfDays').value=15;message('qfMsg','');
+  $('qfCustomer').innerHTML='<option value="">Sin cliente</option>'+customers.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.full_name||'Cliente')+(c.phone?' · '+esc(c.phone):'')+'</option>').join('');
+  $('quoteForm').classList.remove('hidden');qRenderResults();qRenderCart();$('quoteForm').scrollIntoView({behavior:'smooth',block:'start'});
+ }
+ function qRenderResults(){
+  const q=$('qfSearch').value.toLowerCase().trim(), sel=$('qfProduct'), prev=sel.value;
+  const list=products.filter(p=>!q||[p.name,p.brand,p.model].some(v=>(v||'').toLowerCase().includes(q)));
+  sel.innerHTML='<option value="">'+(list.length?'Selecciona un producto…':'No hay productos que coincidan')+'</option>'+list.map(p=>'<option value="'+esc(p.id)+'">'+esc([p.brand,p.model,p.name].filter(Boolean).join(' '))+' — '+money(p.retail_price)+' · stock '+Number(p.stock_quantity||0)+'</option>').join('');
+  if(list.some(p=>String(p.id)===prev))sel.value=prev;
+  $('qfEmpty').textContent=products.length?'':'No hay productos activos. Agrégalos en Productos.';
+ }
+ function qAdd(id){
+  const p=products.find(x=>String(x.id)===String(id));if(!p)return;
+  const it=qCart.find(c=>c.id===p.id);if(it){if(it.qty<10000)it.qty++;}else qCart.push({id:p.id,qty:1});
+  $('qfSearch').value='';qRenderResults();$('qfProduct').value='';qRenderCart();
+  message('qfMsg','Agregado: '+[p.brand,p.model,p.name].filter(Boolean).join(' '),'success');
+ }
+ function qRenderCart(){
+  if(!qCart.length){$('qfCart').innerHTML='<div class="empty">Aún no has agregado productos.</div>';qTotals();return;}
+  $('qfCart').innerHTML='<table style="min-width:0"><thead><tr><th>Producto</th><th>Cant.</th><th>Importe</th><th></th></tr></thead><tbody>'+qCart.map(c=>{const p=products.find(x=>x.id===c.id);if(!p)return '';return '<tr><td>'+esc([p.brand,p.model,p.name].filter(Boolean).join(' '))+'<div class="muted">'+money(p.retail_price)+' c/u · stock '+Number(p.stock_quantity||0)+'</div></td><td><input type="number" min="1" max="10000" step="1" value="'+c.qty+'" data-qf-qty="'+esc(c.id)+'" style="width:72px;padding:8px;border:1px solid #cbd5e1;border-radius:8px" inputmode="numeric"></td><td><span data-qf-amt="'+esc(c.id)+'">'+money(r2(Number(p.retail_price||0)*c.qty))+'</span></td><td><button type="button" class="secondary" data-qf-del="'+esc(c.id)+'">✕</button></td></tr>';}).join('')+'</tbody></table>';
+  $('qfCart').querySelectorAll('[data-qf-qty]').forEach(i=>i.addEventListener('change',()=>{const c=qCart.find(x=>x.id===i.dataset.qfQty),p=products.find(x=>x.id===i.dataset.qfQty);let v=Math.floor(Number(i.value));if(!Number.isFinite(v)||v<1)v=1;if(v>10000)v=10000;c.qty=v;i.value=v;const am=$('qfCart').querySelector('[data-qf-amt="'+i.dataset.qfQty+'"]');if(am)am.textContent=money(r2(Number(p.retail_price||0)*v));qTotals();}));
+  $('qfCart').querySelectorAll('[data-qf-del]').forEach(b=>b.addEventListener('click',()=>{qCart=qCart.filter(x=>x.id!==b.dataset.qfDel);qRenderCart();}));
+  qTotals();
+ }
+ function qCalc(){
+  const sub=r2(qCart.reduce((a,c)=>{const p=products.find(x=>x.id===c.id);return a+(p?r2(Number(p.retail_price||0)*c.qty):0);},0));
+  const tax=$('qfItbis').checked?r2(sub*0.18):0;return {sub,tax,total:r2(sub+tax)};
+ }
+ function qTotals(){const t=qCalc();$('qfTotals').innerHTML='Subtotal: <strong>'+money(t.sub)+'</strong><br>ITBIS (18%): <strong>'+money(t.tax)+'</strong><br>Total: <strong style="font-size:20px">'+money(t.total)+'</strong>';}
+ async function qSubmit(e){
+  e.preventDefault();
+  if(!qCart.length){message('qfMsg','Agrega al menos un producto.','error');return;}
+  const days=Math.floor(Number($('qfDays').value));
+  if(!Number.isFinite(days)||days<1||days>365){message('qfMsg','La validez debe estar entre 1 y 365 días.','error');return;}
+  const btn=$('qfSubmit');btn.disabled=true;message('qfMsg','Guardando cotización…');
+  try{
+   const {data,error}=await sb.rpc('ec_create_quote',{p_customer_id:$('qfCustomer').value||null,p_items:qCart.map(c=>({product_id:c.id,quantity:c.qty})),p_apply_itbis:$('qfItbis').checked,p_valid_days:days,p_notes:$('qfNotes').value.trim()||null});
+   if(error)throw error;
+   $('quoteForm').classList.add('hidden');qCart=[];await loadQuotes();
+   message('quotesMsg','Cotización #'+data.quote_number+' guardada por '+money(data.total)+'.','success');
+  }catch(err){message('qfMsg','No se pudo guardar: '+(err.message||String(err)),'error');}
+  finally{btn.disabled=false;}
+ }
+ function ask(title,label){return new Promise(res=>{$('askTitle').textContent=title;$('askLabel').textContent=label;$('askInput').value='';$('askOverlay').classList.remove('hidden');$('askInput').focus();const done=v=>{$('askOverlay').classList.add('hidden');$('askForm').onsubmit=null;$('askCancel').onclick=null;res(v);};$('askForm').onsubmit=e=>{e.preventDefault();done($('askInput').value.trim());};$('askCancel').onclick=()=>done(null);});}
+ async function loadBiz(){const {data}=await sb.from('ec_business_settings').select('*').order('id').limit(1);biz=(data&&data[0])||null;$('bfName').value=biz?.business_name||'';$('bfRnc').value=biz?.rnc||'';$('bfPhone').value=biz?.phone||'';$('bfAddr').value=biz?.address||'';const m=canEditProducts();['bfName','bfRnc','bfPhone','bfAddr'].forEach(i=>$(i).disabled=!m);$('bfSave').classList.toggle('hidden',!m);}
+ $('bizForm').addEventListener('submit',async e=>{e.preventDefault();const row={business_name:$('bfName').value.trim(),rnc:$('bfRnc').value.trim()||null,phone:$('bfPhone').value.trim()||null,address:$('bfAddr').value.trim()||null};if(!row.business_name){message('bfMsg','Escribe el nombre del negocio.','error');return;}const q=biz?sb.from('ec_business_settings').update(row).eq('id',biz.id).select('id'):sb.from('ec_business_settings').insert({...row,currency:'DOP'}).select('id');const {data,error}=await q;if(error||!data||!data.length){message('bfMsg','No se pudo guardar: '+(error?error.message:'sin permiso.'),'error');return;}message('bfMsg','Datos guardados.','success');await loadBiz();});
+ async function printDoc(kind,d){
+  if(!d)return;let items=[],cust=null,pays=[],credInfo=null;
+  if(kind==='quote'){items=d.ec_quote_items||[];cust=Array.isArray(d.ec_customers)?d.ec_customers[0]:d.ec_customers;}
+  else{const [i,c,p]=await Promise.all([sb.from('ec_sale_items').select('description,quantity,unit_price,line_total').eq('sale_id',d.id),d.customer_id?sb.from('ec_customers').select('full_name,phone').eq('id',d.customer_id).maybeSingle():Promise.resolve({data:null}),sb.from('ec_payments').select('amount,payment_method,reference').eq('sale_id',d.id)]);items=i.data||[];cust=c.data;pays=p.data||[];if(d.payment_method==='credit'&&!d.voided_at){const m=await creditInfoForSales([d.id]);credInfo=m[d.id]||null;}}
+  const PM={cash:'Efectivo',card:'Tarjeta',transfer:'Transferencia',other:'Otro'},b=biz||{},num=kind==='quote'?d.quote_number:d.invoice_number;
+  $('printSheet').innerHTML='<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><h1>'+esc(b.business_name||'Edward Cell')+'</h1>'+(b.rnc?'<div>RNC: '+esc(b.rnc)+'</div>':'')+(b.phone?'<div>Tel.: '+esc(b.phone)+'</div>':'')+(b.address?'<div>'+esc(b.address)+'</div>':'')+'</div><div style="text-align:right"><h2>'+(kind==='quote'?'Cotización':'Factura')+' #'+esc(num)+'</h2><div>Fecha: '+fdate(d.created_at)+'</div>'+(kind==='quote'&&d.expires_at?'<div>Válida hasta: '+fdate(d.expires_at)+'</div>':'')+(d.voided_at?'<div class="void">ANULADA</div>':'')+'</div></div><p><strong>Cliente:</strong> '+esc(cust?.full_name||'Consumidor final')+(cust?.phone?' · '+esc(cust.phone):'')+'</p><table><thead><tr><th>Descripción</th><th>Cant.</th><th>Precio</th><th>Importe</th></tr></thead><tbody>'+items.map(i=>'<tr><td>'+esc(i.description)+'</td><td>'+esc(i.quantity)+'</td><td>'+money(i.unit_price)+'</td><td>'+money(i.line_total)+'</td></tr>').join('')+'</tbody></table><div class="tot">Subtotal: '+money(d.subtotal)+(Number(d.discount)>0?'<br>Descuento: -'+money(d.discount):'')+'<br>ITBIS: '+money(d.tax)+'<br><strong style="font-size:18px">Total: '+money(d.total)+'</strong></div>'+(credInfo?credPayHtml(credInfo,pays,PM,fdate(d.created_at)):pays.length?'<p>Pago: '+pays.map(p=>esc(PM[p.payment_method]||p.payment_method)+' '+money(p.amount)+(p.reference?' (ref. '+esc(p.reference)+')':'')).join(', ')+'</p>':'')+(d.notes?'<p>Notas: '+esc(d.notes)+'</p>':'')+(d.voided_at&&d.void_reason?'<p>Motivo de anulación: '+esc(d.void_reason)+'</p>':'')+'<p class="muted" style="margin-top:20px">'+(kind==='quote'?'Los precios pueden cambiar después de la fecha de validez.':'Comprobante interno de venta, sin valor fiscal (sin NCF).')+'</p>';
+  $('printOverlay').classList.remove('hidden');window.scrollTo(0,0);
+ }
+ $('prPrint').addEventListener('click',()=>window.print());$('prClose').addEventListener('click',()=>$('printOverlay').classList.add('hidden'));
+ async function voidSale(id){const s=salesCache.find(x=>x.id===id);if(!s)return;const why=await ask('Anular factura #'+s.invoice_number,'Motivo de la anulación');if(why===null)return;if(!await confirmar('¿Anular la factura #'+s.invoice_number+'? Los productos vuelven al inventario.'))return;const {error}=await sb.rpc('ec_void_sale',{p_sale_id:id,p_reason:why});if(error){message('appMsg','No se pudo anular: '+error.message,'error');return;}await refreshAll();message('appMsg','Factura #'+s.invoice_number+' anulada.','success');}
+ async function deleteQuote(x){if(!await confirmar('¿Eliminar la cotización #'+x.quote_number+'? No se puede deshacer.'))return;const {error}=await sb.rpc('ec_delete_quote',{p_quote_id:x.id});if(error){message('appMsg','No se pudo eliminar: '+error.message,'error');return;}qOpenId=null;$('quoteDetail').classList.add('hidden');await loadQuotes();message('appMsg','Cotización #'+x.quote_number+' eliminada.','success');}
+ async function requestDiscount(x){const v=await ask('Pedir descuento','Porcentaje (1 a 10)');if(v===null)return;const pct=Number(v.replace(',','.'));if(!(pct>=1&&pct<=10)){message('appMsg','El descuento debe estar entre 1 y 10.','error');return;}const why=await ask('Motivo del descuento','Motivo');if(why===null)return;const {error}=await sb.rpc('ec_request_discount',{p_quote_id:x.id,p_percent:pct,p_reason:why||null});if(error){message('appMsg','No se pudo pedir: '+error.message,'error');return;}message('appMsg','Solicitud enviada. Un administrador debe decidirla.','success');await loadQuotes();}
+ async function showDiscInfo(x){const {data}=await sb.from('ec_approval_requests').select('status,requested_value,decision_note').eq('related_quote_id',x.id).eq('request_type','discount').order('created_at',{ascending:false}).limit(1);const r=data&&data[0];if(!r||!$('qcDiscInfo'))return;$('qcDiscInfo').textContent='Descuento pedido: '+r.requested_value+'% · '+({pending:'esperando decisión',approved:'aceptado',rejected:'rechazado'}[r.status]||r.status)+(r.decision_note?' · '+r.decision_note:'');}
+ async function loadInbox(){const box=$('discInbox');if(!canEditProducts()){box.innerHTML='';return;}const {data,error}=await sb.from('ec_approval_requests').select('id,requested_value,reason,requested_by,related_quote_id').eq('request_type','discount').eq('status','pending').order('created_at');if(error||!data||!data.length){box.innerHTML='';return;}const {data:pf}=await sb.from('ec_profiles').select('user_id,full_name').in('user_id',[...new Set(data.map(r=>r.requested_by))]);const nm=u=>((pf||[]).find(p=>p.user_id===u)||{}).full_name||'Empleado';box.innerHTML='<div class="notice"><strong>Descuentos por decidir</strong></div><div class="tablewrap"><table><thead><tr><th>Cotización</th><th>Pide</th><th>%</th><th>Monto</th><th>Motivo</th><th></th></tr></thead><tbody>'+data.map(r=>{const q=quotesCache.find(x=>x.id===r.related_quote_id);return '<tr><td>#'+esc(q?q.quote_number:'—')+'</td><td>'+esc(nm(r.requested_by))+'</td><td>'+r.requested_value+'%</td><td>'+money(q?r2(Number(q.subtotal)*r.requested_value/100):0)+'</td><td>'+esc(r.reason)+'</td><td><div class="actions"><button type="button" data-d-ok="'+esc(r.id)+'">Aceptar</button><button type="button" class="secondary" data-d-no="'+esc(r.id)+'">Rechazar</button></div></td></tr>';}).join('')+'</tbody></table></div>';box.querySelectorAll('[data-d-ok]').forEach(b=>b.addEventListener('click',()=>decide(b.dataset.dOk,true)));box.querySelectorAll('[data-d-no]').forEach(b=>b.addEventListener('click',()=>decide(b.dataset.dNo,false)));}
+ async function decide(id,ok){const note=await ask(ok?'Aceptar descuento':'Rechazar descuento','Nota (opcional)');if(note===null)return;const {error}=await sb.rpc('ec_decide_discount',{p_request_id:id,p_approve:ok,p_note:note||null});if(error){message('appMsg','No se pudo decidir: '+error.message,'error');return;}await loadQuotes();message('appMsg',ok?'Descuento aceptado.':'Descuento rechazado.','success');}
+ const dr=d=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Santo_Domingo'}).format(d);
+ function rpRange(){const p=$('rpPeriod').value,t=new Date(),today=dr(t),back=n=>dr(new Date(t.getTime()-n*864e5));if(p==='today')return [today,today];if(p==='week'){const wd=new Date(today+'T12:00:00Z').getUTCDay();return [back((wd+6)%7),today];}if(p==='month')return [today.slice(0,8)+'01',today];if(p==='30')return [back(29),today];return [$('rpFrom').value||today,$('rpTo').value||today];}
+ async function loadReport(){
+  if(!sb||!canEditProducts())return;const [f,t]=rpRange();message('rpMsg','Calculando…');
+  const {data:r,error}=await sb.rpc('ec_report_summary',{p_from:f,p_to:t});
+  if(error){message('rpMsg','No se pudo generar: '+error.message,'error');return;}
+  const p=r.periodo,PMN={cash:'Efectivo',card:'Tarjeta',transfer:'Transferencia',other:'Otro',credit:'Crédito',mixed:'Mixto'},st=(l,v)=>'<div class="stat"><span class="muted">'+l+'</span><strong>'+v+'</strong></div>';
+  message('rpMsg','Del '+r.desde+' al '+r.hasta+'. Las facturas anuladas no cuentan.');
+  $('rpOut').innerHTML='<div class="grid">'+st('Ventas de contado hoy ('+r.hoy.facturas+')',money(r.hoy.total))+st('Ventas de contado ('+p.facturas+')',money(p.total_vendido))+st('Ganancia',money(p.ganancia))+st('Costo vendido',money(p.costo))+'</div><p class="muted">Venta neta (sin ITBIS): '+money(p.venta_neta)+' · ITBIS: '+money(p.itbis)+' · Descuentos: '+money(p.descuentos)+'</p><h2 style="margin-top:14px">Por forma de pago</h2><div class="tablewrap"><table style="min-width:0"><thead><tr><th>Forma</th><th>Pagos</th><th>Total</th></tr></thead><tbody>'+(r.por_forma_pago.length?r.por_forma_pago.map(x=>'<tr><td>'+esc(PMN[x.metodo]||x.metodo)+'</td><td>'+x.pagos+'</td><td>'+money(x.total)+'</td></tr>').join(''):'<tr><td colspan="3" class="empty">Sin pagos en el período.</td></tr>')+'</tbody></table></div><h2 style="margin-top:14px">Productos más vendidos</h2><div class="tablewrap"><table style="min-width:0"><thead><tr><th>Producto</th><th>Unid.</th><th>Ingresos</th><th>Ganancia</th></tr></thead><tbody>'+(r.top_productos.length?r.top_productos.map(x=>'<tr><td>'+esc(x.producto||'—')+'</td><td>'+x.unidades+'</td><td>'+money(x.ingresos)+'</td><td>'+money(x.ganancia)+'</td></tr>').join(''):'<tr><td colspan="4" class="empty">Sin ventas en el período.</td></tr>')+'</tbody></table></div>';
+ }
+
+ async function loadCreditReport(){
+  const box=$('rpCredit');if(!sb||!canEditProducts()){box.innerHTML='';return;}
+  const [f,t]=rpRange(),next=dr(new Date(new Date(t+'T12:00:00Z').getTime()+864e5));
+  box.innerHTML='<div class="empty">Calculando ventas a crédito…</div>';
+  const {data:sales,error}=await sb.from('ec_sales').select('id,invoice_number,created_at,total,customer_id').eq('payment_method','credit').is('voided_at',null).gte('created_at',f+'T00:00:00-04:00').lt('created_at',next+'T00:00:00-04:00').order('created_at',{ascending:false});
+  const head='<hr style="border:0;border-top:1px solid var(--line);margin:22px 0"><h2>Ventas a crédito (aparte)</h2>';
+  if(error){box.innerHTML=head+'<p class="error">No se pudo generar: '+esc(tr(error.message))+'</p>';return;}
+  if(!sales.length){box.innerHTML=head+'<div class="empty">No hay ventas a crédito en este período.</div>';return;}
+  const ids=sales.map(x=>x.id);
+  const [it,cm]=await Promise.all([sb.from('ec_sale_items').select('sale_id,description,quantity,cost_price,line_total').in('sale_id',ids),creditInfoForSales(ids)]);
+  const items=it.data||[],sum=(a,fn)=>r2(a.reduce((x,y)=>x+Number(fn(y)||0),0));
+  const facturado=sum(sales,x=>x.total),inicial=sum(sales,x=>cm[x.id]?.initial),pagado=sum(sales,x=>cm[x.id]?.paid),cuotas=r2(pagado-inicial),pend=sum(sales,x=>cm[x.id]?.balance),interes=sum(sales,x=>cm[x.id]?.interest);
+  const costo=sum(items,x=>Number(x.cost_price||0)*Number(x.quantity||0)),ventaProd=sum(items,x=>x.line_total);
+  const byProd={};items.forEach(x=>{const k=x.description||'Producto';byProd[k]=(byProd[k]||0)+Number(x.quantity||0);});
+  const cn=id=>((customers||[]).find(c=>c.id===id)||{}).full_name||'Cliente';
+  const st=(l,v)=>'<div class="stat"><span class="muted">'+l+'</span><strong>'+v+'</strong></div>';
+  box.innerHTML=head+'<p class="muted">Estas ventas se reportan por separado de las ventas de contado.</p><div class="grid">'+st('Ventas a crédito ('+sales.length+')',money(facturado))+st('Inicial cobrada',money(inicial))+st('Cuotas cobradas',money(cuotas))+st('Pendiente por cobrar',money(pend))+st('Intereses contratados',money(interes))+st('Ganancia en productos',money(r2(ventaProd-costo)))+'</div>'
+   +'<h2 style="margin-top:14px">Facturas a crédito</h2><div class="tablewrap"><table style="min-width:0"><thead><tr><th>Factura</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Pagado</th><th>Pendiente</th></tr></thead><tbody>'+sales.map(x=>'<tr><td>#'+esc(x.invoice_number)+'</td><td>'+fdate(x.created_at)+'</td><td>'+esc(cn(x.customer_id))+'</td><td>'+money(x.total)+'</td><td>'+(cm[x.id]?money(cm[x.id].paid):'—')+'</td><td>'+(cm[x.id]?money(cm[x.id].balance):'—')+'</td></tr>').join('')+'</tbody></table></div>'
+   +'<h2 style="margin-top:14px">Inventario que salió por ventas a crédito</h2><div class="tablewrap"><table style="min-width:0"><thead><tr><th>Producto</th><th>Unidades</th></tr></thead><tbody>'+Object.entries(byProd).sort((a,b)=>b[1]-a[1]).map(([k,v])=>'<tr><td>'+esc(k)+'</td><td>'+v+'</td></tr>').join('')+'</tbody></table></div>';
+ }
+ $('rpPeriod').addEventListener('change',()=>document.querySelectorAll('.rpc').forEach(e=>e.classList.toggle('hidden',$('rpPeriod').value!=='custom')));$('rpGo').addEventListener('click',()=>{loadReport();loadCreditReport();});
+ document.querySelector('[data-view="reports"]').addEventListener('click',()=>{if(sb){loadReport();loadCreditReport();}});
+ function money(v){return new Intl.NumberFormat('es-DO',{style:'currency',currency:'DOP'}).format(Number(v||0))}
+ function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+ $('saveConfigBtn').addEventListener('click',setup);
+ $('clearConfigBtn').addEventListener('click',()=>{localStorage.removeItem('ec_supabase_url');localStorage.removeItem('ec_supabase_key');$('supabaseUrl').value='';$('supabaseKey').value='';message('configMsg','Configuración borrada de este navegador.');});
+ $('loginForm').addEventListener('submit',async e=>{e.preventDefault();if(!sb){message('loginMsg','No hay conexión con el sistema. Recarga la página.','error');return;}message('loginMsg','Entrando…');const {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error){message('loginMsg',error.message,'error');return;}currentUser=data.user;await enterApp();});
+ $('logoutBtn').addEventListener('click',async()=>{if(sb)await sb.auth.signOut();currentUser=null;profile=null;$('productForm').classList.add('hidden');$('customerForm').classList.add('hidden');$('saleForm').classList.add('hidden');$('quoteForm').classList.add('hidden');$('quoteDetail').classList.add('hidden');$('appPanel').classList.add('hidden');$('logoutBtn').classList.add('hidden');$('loginPanel').classList.remove('hidden');$('userLabel').textContent='';});
+ document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-view]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[id^="view-"]').forEach(x=>x.classList.add('hidden'));$('view-'+b.dataset.view).classList.remove('hidden');}));
+ document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>document.querySelector('[data-view="'+b.dataset.goto+'"]').click()));
+ $('productSearch').addEventListener('input',renderProducts);$('customerSearch').addEventListener('input',renderCustomers);
+ $('refreshProducts').addEventListener('click',loadProducts);$('newProductBtn').addEventListener('click',()=>openProductForm(null));$('newCustomerBtn').addEventListener('click',()=>openCustomerForm(null));$('customerForm').addEventListener('submit',saveCustomer);$('cfCancel').addEventListener('click',()=>$('customerForm').classList.add('hidden'));$('productForm').addEventListener('submit',saveProduct);$('pfCancel').addEventListener('click',()=>$('productForm').classList.add('hidden'));$('refreshCustomers').addEventListener('click',loadCustomers);
+ $('newSaleBtn').addEventListener('click',sfOpen);$('saleForm').addEventListener('submit',sfSubmit);$('sfCancel').addEventListener('click',()=>$('saleForm').classList.add('hidden'));$('sfSearch').addEventListener('input',sfRenderResults);
+ $('sfAddBtn').addEventListener('click',()=>{const id=$('sfProduct').value;if(!id){message('sfMsg','Primero selecciona un producto de la lista.','error');return;}sfAdd(id);});$('sfItbis').addEventListener('change',sfTotals);
+ $('newQuoteBtn').addEventListener('click',qOpen);$('quoteForm').addEventListener('submit',qSubmit);$('qfCancel').addEventListener('click',()=>$('quoteForm').classList.add('hidden'));$('qfSearch').addEventListener('input',qRenderResults);$('qfItbis').addEventListener('change',qTotals);
+ $('qfAddBtn').addEventListener('click',()=>{const id=$('qfProduct').value;if(!id){message('qfMsg','Primero selecciona un producto de la lista.','error');return;}qAdd(id);});
+ $('refreshQuotes').addEventListener('click',loadQuotes);$('quoteSearch').addEventListener('input',renderQuotes);
+ document.querySelector('[data-view="quotes"]').addEventListener('click',()=>{if(sb)loadQuotes();});
+ $('refreshCredits').addEventListener('click',loadCredits);$('creditSearch').addEventListener('input',renderCredits);$('creditStatusFilter').addEventListener('change',renderCredits);
+ $('creditPaymentForm').addEventListener('submit',submitCreditPayment);$('cancelPayment').addEventListener('click',()=>$('creditPaymentForm').classList.add('hidden'));
+ document.querySelector('[data-view="credits"]').addEventListener('click',()=>{if(sb)loadCredits();});
+ $('newCreditBtn').addEventListener('click',ccOpen);$('creditSaleForm').addEventListener('submit',ccSubmit);$('ccCancel').addEventListener('click',()=>$('creditSaleForm').classList.add('hidden'));
+ $('newUserBtn').addEventListener('click',()=>{$('userForm').reset();message('ufMsg','');$('userForm').classList.remove('hidden');$('ufName').focus();});
+ $('ufCancel').addEventListener('click',()=>$('userForm').classList.add('hidden'));
+ $('userForm').addEventListener('submit',createUser);
+ $('refreshUsers').addEventListener('click',loadUsers);
+ document.querySelector('[data-view="users"]').addEventListener('click',()=>{if(sb)loadUsers();});
+ $('usersTable').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-u-act]');if(!b||!isOwner())return;
+  const u=usersCache.find(x=>x.user_id===b.dataset.uId);if(!u)return;
+  let role=u.role,active=u.active,txt;
+  if(b.dataset.uAct==='role'){role=u.role==='admin'?'employee':'admin';txt='¿Cambiar a "'+(u.full_name||u.email)+'" a '+(role==='admin'?'administrador':'empleado')+'?';}
+  else{active=!u.active;txt=active?'¿Activar a "'+(u.full_name||u.email)+'"?':'¿Desactivar a "'+(u.full_name||u.email)+'"? Ya no podrá entrar al sistema.';}
+  if(!await confirmar(txt,'Usuarios'))return;
+  const {error}=await sb.rpc('ec_save_user',{p_user_id:u.user_id,p_full_name:u.full_name||u.email||'Usuario',p_role:role,p_active:active});
+  if(error){message('usersMsg','No se pudo guardar el cambio: '+error.message,'error');return;}
+  await loadUsers();message('usersMsg','Cambio guardado.','success');
+ });
+ $('deleteCreditBtn').addEventListener('click',async()=>{
+  if(!selectedCredit||!canEditProducts())return;
+  const c=selectedCredit;
+  const why=await ask('Eliminar crédito','Motivo de la eliminación');if(why===null)return;
+  if(why.length<3){message('creditsMsg','Escribe el motivo de la eliminación.','error');return;}
+  if(!await confirmar('Se eliminará este crédito con todas sus cuotas y cobros. La factura se anulará y los productos volverán al inventario. Esta acción no se puede deshacer.','Eliminar crédito'))return;
+  const {error}=await sb.rpc('ec_delete_credit',{p_credit_id:c.id,p_reason:why});
+  if(error){message('creditsMsg','No se pudo eliminar el crédito: '+error.message,'error');return;}
+  $('creditDetail').classList.add('hidden');$('creditPaymentForm').classList.add('hidden');selectedCredit=null;selectedInstallment=null;
+  await refreshAll();await loadCredits();loadSales();message('creditsMsg','Crédito eliminado.','success');
+ });
+ $('creditPaymentsTable').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-void-payment]');if(!b||!selectedCredit)return;
+  const why=await ask('Anular cobro de '+money(b.dataset.amount),'Motivo de la anulación');if(why===null)return;
+  if(!why){message('creditsMsg','Escribe el motivo para anular el cobro.','error');return;}
+  if(!await confirmar('¿Anular este cobro de '+money(b.dataset.amount)+'? La cuota vuelve al saldo anterior.'))return;
+  const {error}=await sb.rpc('ec_void_credit_payment',{p_payment_id:b.dataset.voidPayment,p_reason:why});
+  if(error){message('creditsMsg','No se pudo anular el cobro: '+error.message,'error');return;}
+  const cid=selectedCredit.id;await loadCredits();await openCredit(cid);loadSales();message('creditsMsg','Cobro anulado.','success');
+ });document.querySelectorAll('.close-credit-detail').forEach(b=>b.addEventListener('click',()=>{$('creditDetail').classList.add('hidden');$('creditPaymentForm').classList.add('hidden');selectedCredit=null;selectedInstallment=null;$('creditsTable').scrollIntoView({behavior:'smooth',block:'start'});}));$('ccSearch').addEventListener('input',ccRenderResults);$('ccItbis').addEventListener('change',ccTotals);$('ccInitial').addEventListener('input',ccTotals);
+ $('ccAddBtn').addEventListener('click',()=>{const id=$('ccProduct').value;if(!id){message('ccMsg','Primero selecciona un producto de la lista.','error');return;}ccAdd(id);});
+ $('installmentsTable').addEventListener('click',async e=>{
+  const b=e.target.closest('[data-waive-installment]');if(!b||!selectedCredit)return;
+  const fee=Number(b.dataset.fee);
+  const a=await ask('Perdonar recargo (pendiente '+money(fee)+')','Monto a perdonar (vacío = todo)');if(a===null)return;
+  let amt=null;if(a){amt=Number(a.replace(',','.'));if(!Number.isFinite(amt)||amt<=0||amt>fee){message('creditsMsg','Monto inválido para perdonar.','error');return;}}
+  const n=await ask('Motivo del perdón','Nota (opcional)');if(n===null)return;
+  const {error}=await sb.rpc('ec_waive_late_fee',{p_installment_id:b.dataset.waiveInstallment,p_amount:amt,p_note:n||null});
+  if(error){message('creditsMsg','No se pudo perdonar el recargo: '+error.message,'error');return;}
+  const cid=selectedCredit.id;await loadCredits();await openCredit(cid);loadSales();message('creditsMsg','Recargo perdonado.','success');
+ });
+ if(storedUrl&&storedKey){setup();}
+})();
+</script>
+</body>
+</html>
